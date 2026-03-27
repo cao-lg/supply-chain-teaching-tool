@@ -1,0 +1,596 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>供应链管理演示系统</title>
+    <!-- Bootstrap CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- ECharts -->
+    <script src="https://cdn.jsdelivr.net/npm/echarts@5.4.3/dist/echarts.min.js"></script>
+    <!-- Vue.js -->
+    <script src="https://cdn.jsdelivr.net/npm/vue@3/dist/vue.global.js"></script>
+    <style>
+        body {
+            font-family: system-ui, 'Segoe UI', 'Roboto', 'Noto Sans', sans-serif;
+            background-color: #f8f9fa;
+        }
+        .container {
+            max-width: 1200px;
+        }
+        .card {
+            margin-bottom: 20px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        .card-header {
+            background-color: #343a40;
+            color: white;
+        }
+        .chart-container {
+            height: 400px;
+            margin: 20px 0;
+        }
+        .nav-link {
+            cursor: pointer;
+        }
+        .nav-link.active {
+            font-weight: bold;
+            color: #007bff !important;
+        }
+    </style>
+</head>
+<body>
+    <div id="app" class="container mt-4">
+        <h1 class="text-center mb-4">供应链管理演示系统</h1>
+        
+        <!-- 导航栏 -->
+        <ul class="nav nav-tabs mb-4">
+            <li class="nav-item">
+                <a class="nav-link" :class="{ active: activeTab === 'sales' }" @click="activeTab = 'sales'">销售预测</a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link" :class="{ active: activeTab === 'bom' }" @click="activeTab = 'bom'">产品BOM</a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link" :class="{ active: activeTab === 'purchase' }" @click="activeTab = 'purchase'">采购计划</a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link" :class="{ active: activeTab === 'production' }" @click="activeTab = 'production'">生产计划</a>
+            </li>
+        </ul>
+        
+        <!-- 销售预测模块 -->
+        <div v-if="activeTab === 'sales'">
+            <div class="card">
+                <div class="card-header">销售预测</div>
+                <div class="card-body">
+                    <div class="mb-4">
+                        <h5>历史销售数据</h5>
+                        <table class="table table-bordered">
+                            <thead>
+                                <tr>
+                                    <th>月份</th>
+                                    <th>销量</th>
+                                    <th>操作</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr v-for="(item, index) in historicalData" :key="index">
+                                    <td>{{ item.month }}</td>
+                                    <td><input type="number" v-model.number="item.sales" class="form-control"></td>
+                                    <td><button class="btn btn-danger btn-sm" @click="removeHistoricalData(index)">删除</button></td>
+                                </tr>
+                            </tbody>
+                            <tfoot>
+                                <tr>
+                                    <td><input type="text" v-model="newHistoricalData.month" class="form-control" placeholder="2026-01"></td>
+                                    <td><input type="number" v-model.number="newHistoricalData.sales" class="form-control" placeholder="销量"></td>
+                                    <td><button class="btn btn-primary btn-sm" @click="addHistoricalData">添加</button></td>
+                                </tr>
+                            </tfoot>
+                        </table>
+                    </div>
+                    <button class="btn btn-success mb-4" @click="generateForecast">生成预测</button>
+                    <div class="chart-container" ref="salesChart"></div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- 产品BOM模块 -->
+        <div v-if="activeTab === 'bom'">
+            <div class="card">
+                <div class="card-header">产品BOM管理</div>
+                <div class="card-body">
+                    <div class="mb-4">
+                        <h5>产品列表</h5>
+                        <table class="table table-bordered">
+                            <thead>
+                                <tr>
+                                    <th>产品ID</th>
+                                    <th>产品名称</th>
+                                    <th>操作</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr v-for="product in products" :key="product.id">
+                                    <td>{{ product.id }}</td>
+                                    <td>{{ product.name }}</td>
+                                    <td>
+                                        <button class="btn btn-info btn-sm" @click="editBOM(product)">编辑BOM</button>
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                    
+                    <div v-if="selectedProduct" class="mb-4">
+                        <h5>{{ selectedProduct.name }} 的BOM</h5>
+                        <table class="table table-bordered">
+                            <thead>
+                                <tr>
+                                    <th>物料ID</th>
+                                    <th>物料名称</th>
+                                    <th>数量</th>
+                                    <th>操作</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr v-for="(item, index) in selectedProduct.bom" :key="index">
+                                    <td>{{ item.materialId }}</td>
+                                    <td>{{ item.name }}</td>
+                                    <td><input type="number" v-model.number="item.quantity" class="form-control"></td>
+                                    <td><button class="btn btn-danger btn-sm" @click="removeBOMItem(index)">删除</button></td>
+                                </tr>
+                            </tbody>
+                            <tfoot>
+                                <tr>
+                                    <td><input type="text" v-model="newBOMItem.materialId" class="form-control" placeholder="物料ID"></td>
+                                    <td><input type="text" v-model="newBOMItem.name" class="form-control" placeholder="物料名称"></td>
+                                    <td><input type="number" v-model.number="newBOMItem.quantity" class="form-control" placeholder="数量"></td>
+                                    <td><button class="btn btn-primary btn-sm" @click="addBOMItem">添加</button></td>
+                                </tr>
+                            </tfoot>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- 采购计划模块 -->
+        <div v-if="activeTab === 'purchase'">
+            <div class="card">
+                <div class="card-header">采购计划</div>
+                <div class="card-body">
+                    <button class="btn btn-success mb-4" @click="generatePurchasePlan">生成采购计划</button>
+                    <table class="table table-bordered">
+                        <thead>
+                            <tr>
+                                <th>物料ID</th>
+                                <th>物料名称</th>
+                                <th>需求量</th>
+                                <th>现有库存</th>
+                                <th>采购量</th>
+                                <th>预计到货日期</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr v-for="item in purchasePlan" :key="item.materialId">
+                                <td>{{ item.materialId }}</td>
+                                <td>{{ item.name }}</td>
+                                <td>{{ item.demand }}</td>
+                                <td>{{ item.inventory }}</td>
+                                <td>{{ item.purchaseQty }}</td>
+                                <td>{{ item.arrivalDate }}</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+        
+        <!-- 生产计划模块 -->
+        <div v-if="activeTab === 'production'">
+            <div class="card">
+                <div class="card-header">生产计划</div>
+                <div class="card-body">
+                    <button class="btn btn-success mb-4" @click="generateProductionPlan">生成生产计划</button>
+                    <div class="chart-container" ref="productionChart"></div>
+                    <table class="table table-bordered mt-4">
+                        <thead>
+                            <tr>
+                                <th>产品ID</th>
+                                <th>产品名称</th>
+                                <th>计划产量</th>
+                                <th>开始日期</th>
+                                <th>结束日期</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr v-for="plan in productionPlan" :key="plan.id">
+                                <td>{{ plan.productId }}</td>
+                                <td>{{ plan.productName }}</td>
+                                <td>{{ plan.quantity }}</td>
+                                <td>{{ plan.startDate }}</td>
+                                <td>{{ plan.endDate }}</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+        
+        <!-- 数据管理 -->
+        <div class="card mt-4">
+            <div class="card-header">数据管理</div>
+            <div class="card-body">
+                <button class="btn btn-primary mr-2" @click="saveData">保存数据</button>
+                <button class="btn btn-secondary" @click="loadData">加载数据</button>
+                <button class="btn btn-danger ml-2" @click="clearData">清空数据</button>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Bootstrap JS -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        const { createApp } = Vue;
+        
+        createApp({
+            data() {
+                return {
+                    activeTab: 'sales',
+                    historicalData: [
+                        { month: '2026-01', sales: 100 },
+                        { month: '2026-02', sales: 120 },
+                        { month: '2026-03', sales: 110 },
+                        { month: '2026-04', sales: 130 },
+                        { month: '2026-05', sales: 140 }
+                    ],
+                    newHistoricalData: { month: '', sales: 0 },
+                    forecastData: [],
+                    products: [
+                        {
+                            id: 'P001',
+                            name: '产品A',
+                            bom: [
+                                { materialId: 'M001', name: '原材料X', quantity: 2 },
+                                { materialId: 'M002', name: '原材料Y', quantity: 1 }
+                            ]
+                        },
+                        {
+                            id: 'P002',
+                            name: '产品B',
+                            bom: [
+                                { materialId: 'M001', name: '原材料X', quantity: 1 },
+                                { materialId: 'M003', name: '原材料Z', quantity: 3 }
+                            ]
+                        }
+                    ],
+                    selectedProduct: null,
+                    newBOMItem: { materialId: '', name: '', quantity: 1 },
+                    materials: [
+                        { id: 'M001', name: '原材料X', unit: 'kg', leadTime: 3, inventory: 50 },
+                        { id: 'M002', name: '原材料Y', unit: '个', leadTime: 2, inventory: 30 },
+                        { id: 'M003', name: '原材料Z', unit: 'kg', leadTime: 4, inventory: 20 }
+                    ],
+                    purchasePlan: [],
+                    productionPlan: []
+                };
+            },
+            mounted() {
+                this.loadData();
+                this.initSalesChart();
+                this.initProductionChart();
+            },
+            methods: {
+                // 销售预测相关方法
+                addHistoricalData() {
+                    if (this.newHistoricalData.month && this.newHistoricalData.sales > 0) {
+                        this.historicalData.push({ ...this.newHistoricalData });
+                        this.newHistoricalData = { month: '', sales: 0 };
+                    }
+                },
+                removeHistoricalData(index) {
+                    this.historicalData.splice(index, 1);
+                },
+                generateForecast() {
+                    // 简单的线性回归预测
+                    const months = this.historicalData.length;
+                    if (months < 2) {
+                        alert('需要至少2个月的历史数据');
+                        return;
+                    }
+                    
+                    // 计算斜率和截距
+                    let sumX = 0, sumY = 0, sumXY = 0, sumX2 = 0;
+                    for (let i = 0; i < months; i++) {
+                        sumX += i;
+                        sumY += this.historicalData[i].sales;
+                        sumXY += i * this.historicalData[i].sales;
+                        sumX2 += i * i;
+                    }
+                    
+                    const slope = (months * sumXY - sumX * sumY) / (months * sumX2 - sumX * sumX);
+                    const intercept = (sumY - slope * sumX) / months;
+                    
+                    // 生成未来3个月的预测
+                    this.forecastData = [];
+                    for (let i = 1; i <= 3; i++) {
+                        const predictedSales = Math.round(slope * (months + i - 1) + intercept);
+                        const forecastMonth = this.getNextMonth(this.historicalData[months - 1].month, i);
+                        this.forecastData.push({ month: forecastMonth, sales: predictedSales });
+                    }
+                    
+                    this.updateSalesChart();
+                },
+                getNextMonth(currentMonth, monthsToAdd) {
+                    const [year, month] = currentMonth.split('-').map(Number);
+                    let newMonth = month + monthsToAdd;
+                    let newYear = year;
+                    
+                    while (newMonth > 12) {
+                        newMonth -= 12;
+                        newYear++;
+                    }
+                    
+                    return `${newYear}-${String(newMonth).padStart(2, '0')}`;
+                },
+                initSalesChart() {
+                    this.salesChart = echarts.init(this.$refs.salesChart);
+                    this.updateSalesChart();
+                },
+                updateSalesChart() {
+                    const allData = [...this.historicalData, ...this.forecastData];
+                    const months = allData.map(item => item.month);
+                    const sales = allData.map(item => item.sales);
+                    
+                    const option = {
+                        title: {
+                            text: '销售预测分析'
+                        },
+                        tooltip: {
+                            trigger: 'axis'
+                        },
+                        legend: {
+                            data: ['实际销量', '预测销量']
+                        },
+                        xAxis: {
+                            type: 'category',
+                            data: months
+                        },
+                        yAxis: {
+                            type: 'value'
+                        },
+                        series: [
+                            {
+                                name: '实际销量',
+                                type: 'line',
+                                data: this.historicalData.map(item => item.sales),
+                                lineStyle: {
+                                    color: '#007bff'
+                                }
+                            },
+                            {
+                                name: '预测销量',
+                                type: 'line',
+                                data: Array(this.historicalData.length).fill(null).concat(this.forecastData.map(item => item.sales)),
+                                lineStyle: {
+                                    color: '#28a745',
+                                    type: 'dashed'
+                                }
+                            }
+                        ]
+                    };
+                    
+                    this.salesChart.setOption(option);
+                },
+                
+                // BOM管理相关方法
+                editBOM(product) {
+                    this.selectedProduct = product;
+                },
+                addBOMItem() {
+                    if (this.newBOMItem.materialId && this.newBOMItem.name && this.newBOMItem.quantity > 0) {
+                        this.selectedProduct.bom.push({ ...this.newBOMItem });
+                        this.newBOMItem = { materialId: '', name: '', quantity: 1 };
+                    }
+                },
+                removeBOMItem(index) {
+                    this.selectedProduct.bom.splice(index, 1);
+                },
+                
+                // 采购计划相关方法
+                generatePurchasePlan() {
+                    // 基于销售预测和BOM生成采购计划
+                    const materialDemand = {};
+                    
+                    // 计算物料需求
+                    this.forecastData.forEach(forecast => {
+                        this.products.forEach(product => {
+                            // 假设每个产品的销量等于预测销量
+                            const productSales = forecast.sales;
+                            
+                            product.bom.forEach(bomItem => {
+                                if (!materialDemand[bomItem.materialId]) {
+                                    materialDemand[bomItem.materialId] = {
+                                        name: bomItem.name,
+                                        demand: 0
+                                    };
+                                }
+                                materialDemand[bomItem.materialId].demand += productSales * bomItem.quantity;
+                            });
+                        });
+                    });
+                    
+                    // 生成采购计划
+                    this.purchasePlan = [];
+                    for (const [materialId, demandInfo] of Object.entries(materialDemand)) {
+                        const material = this.materials.find(m => m.id === materialId);
+                        if (material) {
+                            const purchaseQty = Math.max(0, demandInfo.demand - material.inventory);
+                            const arrivalDate = this.getFutureDate(material.leadTime);
+                            
+                            this.purchasePlan.push({
+                                materialId,
+                                name: demandInfo.name,
+                                demand: demandInfo.demand,
+                                inventory: material.inventory,
+                                purchaseQty,
+                                arrivalDate
+                            });
+                        }
+                    }
+                },
+                getFutureDate(days) {
+                    const date = new Date();
+                    date.setDate(date.getDate() + days);
+                    return date.toISOString().split('T')[0];
+                },
+                
+                // 生产计划相关方法
+                generateProductionPlan() {
+                    // 基于销售预测生成生产计划
+                    this.productionPlan = [];
+                    let planId = 1;
+                    
+                    this.forecastData.forEach((forecast, index) => {
+                        this.products.forEach(product => {
+                            // 假设每个产品的产量等于预测销量
+                            const quantity = forecast.sales;
+                            const startDate = this.getFutureDate(index * 7);
+                            const endDate = this.getFutureDate(index * 7 + 5);
+                            
+                            this.productionPlan.push({
+                                id: `Plan${String(planId).padStart(3, '0')}`,
+                                productId: product.id,
+                                productName: product.name,
+                                quantity,
+                                startDate,
+                                endDate
+                            });
+                            
+                            planId++;
+                        });
+                    });
+                    
+                    this.updateProductionChart();
+                },
+                initProductionChart() {
+                    this.productionChart = echarts.init(this.$refs.productionChart);
+                    this.updateProductionChart();
+                },
+                updateProductionChart() {
+                    const categories = this.products.map(product => product.name);
+                    const series = [];
+                    
+                    this.productionPlan.forEach(plan => {
+                        series.push({
+                            name: plan.productName,
+                            value: [
+                                categories.indexOf(plan.productName),
+                                new Date(plan.startDate).getTime(),
+                                new Date(plan.endDate).getTime()
+                            ]
+                        });
+                    });
+                    
+                    const option = {
+                        title: {
+                            text: '生产计划甘特图'
+                        },
+                        tooltip: {
+                            formatter: function(params) {
+                                const data = params[0].data;
+                                return `${categories[data[0]]}<br/>开始: ${new Date(data[1]).toISOString().split('T')[0]}<br/>结束: ${new Date(data[2]).toISOString().split('T')[0]}`;
+                            }
+                        },
+                        grid: {
+                            left: '10%',
+                            right: '10%',
+                            bottom: '15%'
+                        },
+                        xAxis: {
+                            type: 'time',
+                            axisLabel: {
+                                formatter: function(value) {
+                                    return new Date(value).toISOString().split('T')[0];
+                                }
+                            }
+                        },
+                        yAxis: {
+                            type: 'category',
+                            data: categories
+                        },
+                        series: [{
+                            type: 'custom',
+                            renderItem: function(params, api) {
+                                const categoryIndex = api.value(0);
+                                const start = api.coord([api.value(1), categoryIndex]);
+                                const end = api.coord([api.value(2), categoryIndex]);
+                                const height = api.size([0, 1])[1] * 0.6;
+                                
+                                const rectShape = echarts.graphic.clipRectByRect({
+                                    x: start[0],
+                                    y: start[1] - height / 2,
+                                    width: end[0] - start[0],
+                                    height: height
+                                }, {
+                                    x: params.coordSys.x,
+                                    y: params.coordSys.y,
+                                    width: params.coordSys.width,
+                                    height: params.coordSys.height
+                                });
+                                
+                                return rectShape && {
+                                    type: 'rect',
+                                    shape: rectShape,
+                                    style: {
+                                        fill: '#5470c6',
+                                        opacity: 0.6
+                                    }
+                                };
+                            },
+                            data: series
+                        }]
+                    };
+                    
+                    this.productionChart.setOption(option);
+                },
+                
+                // 数据管理相关方法
+                saveData() {
+                    const data = {
+                        historicalData: this.historicalData,
+                        forecastData: this.forecastData,
+                        products: this.products,
+                        materials: this.materials,
+                        purchasePlan: this.purchasePlan,
+                        productionPlan: this.productionPlan
+                    };
+                    localStorage.setItem('supplyChainData', JSON.stringify(data));
+                    alert('数据已保存');
+                },
+                loadData() {
+                    const savedData = localStorage.getItem('supplyChainData');
+                    if (savedData) {
+                        const data = JSON.parse(savedData);
+                        this.historicalData = data.historicalData || this.historicalData;
+                        this.forecastData = data.forecastData || this.forecastData;
+                        this.products = data.products || this.products;
+                        this.materials = data.materials || this.materials;
+                        this.purchasePlan = data.purchasePlan || this.purchasePlan;
+                        this.productionPlan = data.productionPlan || this.productionPlan;
+                        this.updateSalesChart();
+                        this.updateProductionChart();
+                        alert('数据已加载');
+                    }
+                },
+                clearData() {
+                    localStorage.removeItem('supplyChainData');
+                    alert('数据已清空');
+                }
+            }
+        }).mount('#app');
+    </script>
+</body>
+</html>
