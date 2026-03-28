@@ -378,6 +378,12 @@ export default {
             editingSurvey: {}
         };
     },
+    watch: {
+        // 当组件激活时刷新数据
+        activeTab() {
+            this.refreshData();
+        }
+    },
     computed: {
         /**
          * 总体满意度
@@ -420,6 +426,12 @@ export default {
         }
     },
     methods: {
+        /**
+         * 刷新数据
+         */
+        refreshData() {
+            this.data = loadData();
+        },
         /**
          * 获取订单编号
          * @param {string} orderId - 订单ID

@@ -267,6 +267,12 @@ export default {
             data: loadData()
         };
     },
+    watch: {
+        // 当组件激活时刷新数据
+        activeTab() {
+            this.refreshData();
+        }
+    },
     computed: {
         /**
          * 绩效指标
@@ -283,11 +289,30 @@ export default {
                 return actualDate <= deliveryDate;
             }).length;
 
+            // 计算库存周转率
+            const inventory = this.data.inventory || { materials: [], products: [] };
+            const materialInventory = inventory.materials.reduce((total, item) => total + (item.quantity || 0), 0);
+            const productInventory = inventory.products.reduce((total, item) => total + (item.quantity || 0), 0);
+            const totalInventory = materialInventory + productInventory;
+            
+            // 计算年度销售数据
+            const totalSales = orders.reduce((total, order) => total + (order.quantity || 0), 0);
+            const annualSales = totalSales * 2; // 假设当前数据为6个月
+            const inventoryTurnover = totalInventory > 0 ? (annualSales / totalInventory).toFixed(1) : 0;
+            
+            // 计算总成本
+            const purchaseOrders = this.data.purchaseOrders || [];
+            const totalCost = purchaseOrders.reduce((total, order) => {
+                return total + order.items.reduce((itemTotal, item) => {
+                    return itemTotal + (item.quantity || 0) * (item.price || 0);
+                }, 0);
+            }, 0);
+
             return {
                 orderFulfillment: totalOrders > 0 ? Math.round((completedOrders / totalOrders) * 100) : 0,
                 onTimeDelivery: completedOrders > 0 ? Math.round((onTimeOrders / completedOrders) * 100) : 0,
-                inventoryTurnover: 8.5, // 模拟数据
-                totalCost: 1250000 // 模拟数据
+                inventoryTurnover: parseFloat(inventoryTurnover),
+                totalCost: totalCost
             };
         },
 
@@ -296,12 +321,66 @@ export default {
          * @returns {Array} 成本明细列表
          */
         costDetails() {
+            const purchaseOrders = this.data.purchaseOrders || [];
+            
+            // 计算采购成本
+            const purchaseCost = purchaseOrders.reduce((total, order) => {
+                return total + order.items.reduce((itemTotal, item) => {
+                    return itemTotal + (item.quantity || 0) * (item.price || 0);
+                }, 0);
+            }, 0);
+            
+            // 估算其他成本
+            const productionCost = Math.round(purchaseCost * 0.7); // 假设生产成本为采购成本的70%
+            const logisticsCost = Math.round(purchaseCost * 0.4); // 假设物流成本为采购成本的40%
+            const inventoryCost = Math.round(purchaseCost * 0.3); // 假设库存成本为采购成本的30%
+            const managementCost = Math.round(purchaseCost * 0.3); // 假设管理成本为采购成本的30%
+            
+            const totalCost = purchaseCost + productionCost + logisticsCost + inventoryCost + managementCost;
+            
+            // 计算上月成本（假设上月成本为当月的95%）
+            const lastPurchaseCost = Math.round(purchaseCost * 0.95);
+            const lastProductionCost = Math.round(productionCost * 0.95);
+            const lastLogisticsCost = Math.round(logisticsCost * 0.95);
+            const lastInventoryCost = Math.round(inventoryCost * 0.95);
+            const lastManagementCost = Math.round(managementCost * 0.95);
+            
             return [
-                { name: '采购成本', currentMonth: 450000, lastMonth: 420000, change: 7.1, percentage: 36 },
-                { name: '生产成本', currentMonth: 320000, lastMonth: 310000, change: 3.2, percentage: 25.6 },
-                { name: '物流成本', currentMonth: 180000, lastMonth: 195000, change: -7.7, percentage: 14.4 },
-                { name: '库存成本', currentMonth: 150000, lastMonth: 145000, change: 3.4, percentage: 12 },
-                { name: '管理成本', currentMonth: 150000, lastMonth: 150000, change: 0, percentage: 12 }
+                { 
+                    name: '采购成本', 
+                    currentMonth: purchaseCost, 
+                    lastMonth: lastPurchaseCost, 
+                    change: purchaseCost > 0 ? ((purchaseCost - lastPurchaseCost) / lastPurchaseCost * 100).toFixed(1) : 0, 
+                    percentage: totalCost > 0 ? (purchaseCost / totalCost * 100).toFixed(1) : 0 
+                },
+                { 
+                    name: '生产成本', 
+                    currentMonth: productionCost, 
+                    lastMonth: lastProductionCost, 
+                    change: productionCost > 0 ? ((productionCost - lastProductionCost) / lastProductionCost * 100).toFixed(1) : 0, 
+                    percentage: totalCost > 0 ? (productionCost / totalCost * 100).toFixed(1) : 0 
+                },
+                { 
+                    name: '物流成本', 
+                    currentMonth: logisticsCost, 
+                    lastMonth: lastLogisticsCost, 
+                    change: logisticsCost > 0 ? ((logisticsCost - lastLogisticsCost) / lastLogisticsCost * 100).toFixed(1) : 0, 
+                    percentage: totalCost > 0 ? (logisticsCost / totalCost * 100).toFixed(1) : 0 
+                },
+                { 
+                    name: '库存成本', 
+                    currentMonth: inventoryCost, 
+                    lastMonth: lastInventoryCost, 
+                    change: inventoryCost > 0 ? ((inventoryCost - lastInventoryCost) / lastInventoryCost * 100).toFixed(1) : 0, 
+                    percentage: totalCost > 0 ? (inventoryCost / totalCost * 100).toFixed(1) : 0 
+                },
+                { 
+                    name: '管理成本', 
+                    currentMonth: managementCost, 
+                    lastMonth: lastManagementCost, 
+                    change: managementCost > 0 ? ((managementCost - lastManagementCost) / lastManagementCost * 100).toFixed(1) : 0, 
+                    percentage: totalCost > 0 ? (managementCost / totalCost * 100).toFixed(1) : 0 
+                }
             ];
         },
 
@@ -438,6 +517,12 @@ export default {
     },
     methods: {
         /**
+         * 刷新数据
+         */
+        refreshData() {
+            this.data = loadData();
+        },
+        /**
          * 格式化数字
          * @param {number} num - 数字
          * @returns {string} 格式化后的字符串
@@ -509,6 +594,28 @@ export default {
 
             const chart = echarts.init(chartDom);
             
+            // 模拟6个月的KPI数据
+            const months = ['1月', '2月', '3月', '4月', '5月', '6月'];
+            
+            // 基于当前绩效指标生成趋势数据
+            const currentMetrics = this.performanceMetrics;
+            
+            // 生成模拟趋势数据
+            const orderFulfillmentData = [];
+            const onTimeDeliveryData = [];
+            const inventoryTurnoverData = [];
+            
+            for (let i = 0; i < 6; i++) {
+                // 生成略有波动的数据
+                const fulfillment = Math.max(70, Math.min(100, currentMetrics.orderFulfillment + (Math.random() - 0.5) * 10));
+                const delivery = Math.max(70, Math.min(100, currentMetrics.onTimeDelivery + (Math.random() - 0.5) * 10));
+                const turnover = Math.max(1, Math.min(15, currentMetrics.inventoryTurnover + (Math.random() - 0.5) * 2));
+                
+                orderFulfillmentData.push(Math.round(fulfillment));
+                onTimeDeliveryData.push(Math.round(delivery));
+                inventoryTurnoverData.push(parseFloat(turnover.toFixed(1)));
+            }
+            
             chart.setOption({
                 tooltip: {
                     trigger: 'axis'
@@ -524,7 +631,7 @@ export default {
                 },
                 xAxis: {
                     type: 'category',
-                    data: ['1月', '2月', '3月', '4月', '5月', '6月']
+                    data: months
                 },
                 yAxis: {
                     type: 'value',
@@ -534,21 +641,21 @@ export default {
                     {
                         name: '订单履约率',
                         type: 'line',
-                        data: [92, 94, 93, 95, 96, 95],
+                        data: orderFulfillmentData,
                         smooth: true,
                         itemStyle: { color: '#52c41a' }
                     },
                     {
                         name: '准时交付率',
                         type: 'line',
-                        data: [88, 90, 89, 92, 93, 94],
+                        data: onTimeDeliveryData,
                         smooth: true,
                         itemStyle: { color: '#1890ff' }
                     },
                     {
                         name: '库存周转率',
                         type: 'line',
-                        data: [7.5, 7.8, 8.0, 8.2, 8.5, 8.5],
+                        data: inventoryTurnoverData,
                         smooth: true,
                         itemStyle: { color: '#faad14' }
                     }
@@ -613,6 +720,13 @@ export default {
 
             const chart = echarts.init(chartDom);
             
+            // 使用成本明细数据
+            const costDetails = this.costDetails;
+            const costData = costDetails.map(item => ({
+                value: item.currentMonth,
+                name: item.name
+            })).filter(item => item.value > 0);
+            
             chart.setOption({
                 tooltip: {
                     trigger: 'item',
@@ -645,13 +759,7 @@ export default {
                     labelLine: {
                         show: false
                     },
-                    data: [
-                        { value: 450000, name: '采购成本' },
-                        { value: 320000, name: '生产成本' },
-                        { value: 180000, name: '物流成本' },
-                        { value: 150000, name: '库存成本' },
-                        { value: 150000, name: '管理成本' }
-                    ]
+                    data: costData
                 }]
             });
         },
@@ -664,6 +772,35 @@ export default {
             if (!chartDom) return;
 
             const chart = echarts.init(chartDom);
+            
+            const months = ['1月', '2月', '3月', '4月', '5月', '6月'];
+            const costDetails = this.costDetails;
+            
+            // 生成6个月的成本趋势数据
+            const purchaseCostData = [];
+            const productionCostData = [];
+            const logisticsCostData = [];
+            const inventoryCostData = [];
+            const managementCostData = [];
+            
+            // 找到成本明细中对应的成本项
+            const purchaseCostItem = costDetails.find(item => item.name === '采购成本');
+            const productionCostItem = costDetails.find(item => item.name === '生产成本');
+            const logisticsCostItem = costDetails.find(item => item.name === '物流成本');
+            const inventoryCostItem = costDetails.find(item => item.name === '库存成本');
+            const managementCostItem = costDetails.find(item => item.name === '管理成本');
+            
+            // 生成模拟趋势数据
+            for (let i = 0; i < 6; i++) {
+                // 生成略有波动的数据，从低到高
+                const factor = 0.8 + (i * 0.05); // 从80%到105%
+                
+                purchaseCostData.push(Math.round((purchaseCostItem?.currentMonth || 0) * factor));
+                productionCostData.push(Math.round((productionCostItem?.currentMonth || 0) * factor));
+                logisticsCostData.push(Math.round((logisticsCostItem?.currentMonth || 0) * factor));
+                inventoryCostData.push(Math.round((inventoryCostItem?.currentMonth || 0) * factor));
+                managementCostData.push(Math.round((managementCostItem?.currentMonth || 0) * factor));
+            }
             
             chart.setOption({
                 tooltip: {
@@ -683,7 +820,7 @@ export default {
                 },
                 xAxis: {
                     type: 'category',
-                    data: ['1月', '2月', '3月', '4月', '5月', '6月']
+                    data: months
                 },
                 yAxis: {
                     type: 'value',
@@ -694,31 +831,31 @@ export default {
                         name: '采购成本',
                         type: 'bar',
                         stack: 'total',
-                        data: [400000, 410000, 415000, 420000, 425000, 450000]
+                        data: purchaseCostData
                     },
                     {
                         name: '生产成本',
                         type: 'bar',
                         stack: 'total',
-                        data: [300000, 305000, 308000, 310000, 312000, 320000]
+                        data: productionCostData
                     },
                     {
                         name: '物流成本',
                         type: 'bar',
                         stack: 'total',
-                        data: [200000, 195000, 190000, 188000, 185000, 180000]
+                        data: logisticsCostData
                     },
                     {
                         name: '库存成本',
                         type: 'bar',
                         stack: 'total',
-                        data: [140000, 142000, 143000, 144000, 145000, 150000]
+                        data: inventoryCostData
                     },
                     {
                         name: '管理成本',
                         type: 'bar',
                         stack: 'total',
-                        data: [150000, 150000, 150000, 150000, 150000, 150000]
+                        data: managementCostData
                     }
                 ]
             });

@@ -132,6 +132,15 @@ export default {
                                     <input type="text" class="form-control" v-model="editingOrder.orderNo" required>
                                 </div>
                                 <div class="mb-3">
+                                    <label class="form-label">客户</label>
+                                    <select class="form-select" v-model="editingOrder.customerId" @change="calculateDeliveryDate" required>
+                                        <option value="">请选择客户</option>
+                                        <option v-for="customer in data.customers" :key="customer.id" :value="customer.id">
+                                            {{ customer.name }}
+                                        </option>
+                                    </select>
+                                </div>
+                                <div class="mb-3">
                                     <label class="form-label">产品</label>
                                     <select class="form-select" v-model="editingOrder.productId" required>
                                         <option v-for="product in data.products" :key="product.id" :value="product.id">
@@ -145,7 +154,15 @@ export default {
                                 </div>
                                 <div class="mb-3">
                                     <label class="form-label">交货日期</label>
-                                    <input type="date" class="form-control" v-model="editingOrder.deliveryDate" required>
+                                    <input type="date" class="form-control" v-model="editingOrder.deliveryDate" @change="recordDeliveryDateAdjustment" required>
+                                </div>
+                                <div class="mb-3">
+                                    <label class="form-label">交货日期调整原因</label>
+                                    <textarea class="form-control" v-model="editingOrder.deliveryDateAdjustmentReason" rows="2"></textarea>
+                                </div>
+                                <div class="mb-3" v-if="editingOrder.deliveryDateCalculation">
+                                    <label class="form-label">交货日期计算依据</label>
+                                    <input type="text" class="form-control" v-model="editingOrder.deliveryDateCalculation" readonly>
                                 </div>
                                 <div class="mb-3">
                                     <label class="form-label">优先级</label>
@@ -210,7 +227,30 @@ export default {
             editingPlan: {}
         };
     },
+    mounted() {
+        // 监听数据更新事件
+        window.addEventListener('data-updated', this.refreshData);
+        if (this.activeTab === 'plans') {
+            setTimeout(() => this.initGanttChart(), 100);
+        }
+    },
+    beforeUnmount() {
+        // 移除事件监听
+        window.removeEventListener('data-updated', this.refreshData);
+    },
+    watch: {
+        // 当组件激活时刷新数据
+        activeTab() {
+            this.refreshData();
+        }
+    },
     methods: {
+        /**
+         * 刷新数据
+         */
+        refreshData() {
+            this.data = loadData();
+        },
         /**
          * 获取产品名称
          * @param {string} id - 产品ID
@@ -269,13 +309,82 @@ export default {
         openOrderModal(order = null) {
             this.editingOrder = order ? { ...order } : { 
                 orderNo: '', 
+                customerId: '',
                 productId: '', 
                 quantity: 1, 
                 deliveryDate: '', 
+                deliveryDateCalculation: '',
+                deliveryDateAdjustmentReason: '',
                 priority: '普通',
                 status: '待处理' 
             };
             new bootstrap.Modal(this.$refs.orderModal).show();
+        },
+        
+        /**
+         * 计算交货日期
+         */
+        calculateDeliveryDate() {
+            if (!this.editingOrder.customerId) return;
+            
+            const customer = this.data.customers.find(c => c.id === this.editingOrder.customerId);
+            if (!customer || !customer.deliveryRules || customer.deliveryRules.length === 0) return;
+            
+            // 按优先级排序规则
+            const sortedRules = [...customer.deliveryRules].sort((a, b) => a.priority - b.priority);
+            const selectedRule = sortedRules[0];
+            
+            let deliveryDate = new Date();
+            let calculationReason = '';
+            
+            switch (selectedRule.type) {
+                case 'fixed_days':
+                    deliveryDate.setDate(deliveryDate.getDate() + selectedRule.days);
+                    calculationReason = `固定天数规则：${selectedRule.days}天`;
+                    break;
+                case 'working_days':
+                    let workingDays = selectedRule.days;
+                    let currentDate = new Date();
+                    while (workingDays > 0) {
+                        currentDate.setDate(currentDate.getDate() + 1);
+                        const dayOfWeek = currentDate.getDay();
+                        if (dayOfWeek !== 0 && dayOfWeek !== 6) {
+                            workingDays--;
+                        }
+                    }
+                    deliveryDate = currentDate;
+                    calculationReason = `工作日规则：${selectedRule.days}个工作日`;
+                    break;
+                case 'specific_date':
+                    const currentMonth = deliveryDate.getMonth();
+                    const currentYear = deliveryDate.getFullYear();
+                    let targetMonth = currentMonth;
+                    let targetYear = currentYear;
+                    
+                    if (deliveryDate.getDate() > selectedRule.dayOfMonth) {
+                        targetMonth += 1;
+                        if (targetMonth > 11) {
+                            targetMonth = 0;
+                            targetYear += 1;
+                        }
+                    }
+                    
+                    deliveryDate = new Date(targetYear, targetMonth, selectedRule.dayOfMonth);
+                    calculationReason = `特定日期规则：每月${selectedRule.dayOfMonth}日`;
+                    break;
+            }
+            
+            this.editingOrder.deliveryDate = deliveryDate.toISOString().split('T')[0];
+            this.editingOrder.deliveryDateCalculation = calculationReason;
+        },
+        
+        /**
+         * 记录交货日期调整
+         */
+        recordDeliveryDateAdjustment() {
+            if (!this.editingOrder.deliveryDateCalculation) {
+                this.editingOrder.deliveryDateCalculation = '手动设置';
+            }
         },
 
         /**
@@ -408,6 +517,9 @@ export default {
          * 初始化甘特图
          */
         initGanttChart() {
+            // 先刷新数据
+            this.refreshData();
+            
             const chartDom = document.getElementById('ganttChart');
             if (!chartDom) return;
 
@@ -472,11 +584,6 @@ export default {
                     .reduce((total, equipment) => total + equipment.capacityPerDay, 0);
             }
             return 0;
-        }
-    },
-    mounted() {
-        if (this.activeTab === 'plans') {
-            setTimeout(() => this.initGanttChart(), 100);
         }
     }
 };

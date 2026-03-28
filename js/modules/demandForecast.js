@@ -234,6 +234,7 @@ export default {
             editingModel: {}
         };
     },
+
     computed: {
         /**
          * 需求分析洞察
@@ -290,6 +291,12 @@ export default {
     },
     methods: {
         /**
+         * 刷新数据
+         */
+        refreshData() {
+            this.data = loadData();
+        },
+        /**
          * 获取产品名称
          * @param {string} id - 产品ID
          * @returns {string} 产品名称
@@ -303,15 +310,45 @@ export default {
          * 生成销售预测
          */
         generateForecast() {
-            // 模拟预测算法
             const duration = parseInt(this.forecastSettings.duration);
             const forecastData = [];
             
-            // 获取历史数据（模拟）
-            const baseValue = 100;
-            const trend = 0.05; // 5%增长趋势
-            const seasonality = [1.0, 0.9, 1.1, 1.2, 1.3, 1.1, 1.0, 0.9, 1.1, 1.2, 1.4, 1.2]; // 季节性因子
+            // 从订单数据获取历史销售数据
+            const orders = this.data.orders || [];
+            const productId = this.forecastSettings.productId;
             
+            // 过滤出指定产品的订单
+            const filteredOrders = productId ? 
+                orders.filter(order => order.productId === productId) : 
+                orders;
+            
+            // 按月份统计历史销量
+            const historicalSales = {};
+            filteredOrders.forEach(order => {
+                const date = new Date(order.deliveryDate);
+                const monthKey = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`;
+                if (!historicalSales[monthKey]) {
+                    historicalSales[monthKey] = 0;
+                }
+                historicalSales[monthKey] += order.quantity || 0;
+            });
+            
+            // 计算历史平均销量和增长趋势
+            const historicalValues = Object.values(historicalSales);
+            const baseValue = historicalValues.length > 0 
+                ? Math.round(historicalValues.reduce((sum, val) => sum + val, 0) / historicalValues.length)
+                : 100; // 默认值
+            
+            // 计算增长趋势
+            let trend = 0.05; // 默认5%增长
+            if (historicalValues.length >= 2) {
+                const firstValue = historicalValues[0];
+                const lastValue = historicalValues[historicalValues.length - 1];
+                trend = (lastValue - firstValue) / firstValue / (historicalValues.length - 1);
+                trend = Math.max(-0.1, Math.min(0.2, trend)); // 限制趋势范围
+            }
+            
+            const seasonality = [1.0, 0.9, 1.1, 1.2, 1.3, 1.1, 1.0, 0.9, 1.1, 1.2, 1.4, 1.2]; // 季节性因子
             const now = new Date();
             
             for (let i = 0; i < duration; i++) {
@@ -326,7 +363,7 @@ export default {
                 
                 const trendFactor = Math.pow(1 + trend, i);
                 const seasonalFactor = seasonality[date.getMonth() % 12];
-                const predictedValue = Math.round(baseValue * trendFactor * seasonalFactor);
+                const predictedValue = Math.max(0, Math.round(baseValue * trendFactor * seasonalFactor));
                 const confidenceInterval = Math.round(predictedValue * 0.15); // 15%置信区间
                 
                 const prevValue = i > 0 ? forecastData[i - 1].value : predictedValue;
@@ -335,7 +372,7 @@ export default {
                 forecastData.push({
                     period,
                     value: predictedValue,
-                    lowerBound: predictedValue - confidenceInterval,
+                    lowerBound: Math.max(0, predictedValue - confidenceInterval),
                     upperBound: predictedValue + confidenceInterval,
                     growthRate
                 });
@@ -423,9 +460,26 @@ export default {
 
             const chart = echarts.init(chartDom);
             
-            // 模拟历史销售数据
+            // 从订单数据获取历史销售数据
+            const orders = this.data.orders || [];
+            
+            // 按月份统计销量
+            const monthlySales = {};
+            // 初始化12个月的数据
+            for (let i = 1; i <= 12; i++) {
+                monthlySales[i] = 0;
+            }
+            
+            // 统计每月销量
+            orders.forEach(order => {
+                const date = new Date(order.deliveryDate);
+                const month = date.getMonth() + 1;
+                monthlySales[month] += order.quantity || 0;
+            });
+            
             const months = ['1月', '2月', '3月', '4月', '5月', '6月', '7月', '8月', '9月', '10月', '11月', '12月'];
-            const salesData = [120, 132, 101, 134, 90, 230, 210, 180, 200, 250, 280, 300];
+            const salesData = [monthlySales[1], monthlySales[2], monthlySales[3], monthlySales[4], monthlySales[5], monthlySales[6],
+                              monthlySales[7], monthlySales[8], monthlySales[9], monthlySales[10], monthlySales[11], monthlySales[12]];
             
             chart.setOption({
                 tooltip: {
@@ -468,20 +522,17 @@ export default {
             const productData = this.data.products.map(product => {
                 const orderCount = this.data.orders
                     .filter(order => order.productId === product.id)
-                    .reduce((sum, order) => sum + order.quantity, 0);
+                    .reduce((sum, order) => sum + (order.quantity || 0), 0);
                 return {
                     name: product.name,
-                    value: orderCount || Math.floor(Math.random() * 100) + 50 // 如果没有订单数据，使用随机数
+                    value: orderCount
                 };
-            });
+            }).filter(item => item.value > 0); // 只显示有需求的产品
             
-            // 如果没有产品数据，使用默认数据
+            // 如果没有产品数据或没有需求数据，使用默认数据
             const data = productData.length > 0 ? productData : [
                 { name: '智能手表', value: 335 },
-                { name: '无线耳机', value: 310 },
-                { name: '平板电脑', value: 234 },
-                { name: '智能音箱', value: 135 },
-                { name: '智能手环', value: 148 }
+                { name: '无线耳机', value: 310 }
             ];
             
             chart.setOption({
@@ -558,6 +609,8 @@ export default {
     },
     watch: {
         activeTab(newTab) {
+            // 当组件激活时刷新数据
+            this.refreshData();
             if (newTab === 'analysis') {
                 this.$nextTick(() => {
                     this.initSalesTrendChart();

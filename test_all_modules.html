@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>测试所有模块数据显示</title>
+    <link href="https://unpkg.com/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
+    <script type="module">
+        import { loadData, loadSampleData } from './js/store.js';
+        import BasicDataModule from './js/modules/basicData.js';
+        import ProductionPlanModule from './js/modules/productionPlan.js';
+        import PurchasePlanModule from './js/modules/purchasePlan.js';
+        import InventoryModule from './js/modules/inventory.js';
+        import DataAnalysisModule from './js/modules/dataAnalysis.js';
+
+        // 加载示例数据
+        console.log('加载示例数据...');
+        const sampleData = loadSampleData();
+        console.log('示例数据加载成功:', sampleData);
+
+        // 测试从LocalStorage加载数据
+        console.log('从LocalStorage加载数据...');
+        const localStorageData = loadData();
+        console.log('LocalStorage数据:', localStorageData);
+
+        // 显示测试结果
+        document.getElementById('result').innerHTML = `
+            <h3>测试结果</h3>
+            <div class="row">
+                <div class="col-md-4">
+                    <div class="card mb-3">
+                        <div class="card-body">
+                            <h5 class="card-title">数据统计</h5>
+                            <ul class="list-group">
+                                <li class="list-group-item">产品数量: ${localStorageData.products.length}</li>
+                                <li class="list-group-item">物料数量: ${localStorageData.materials.length}</li>
+                                <li class="list-group-item">供应商数量: ${localStorageData.suppliers.length}</li>
+                                <li class="list-group-item">BOM数量: ${localStorageData.boms.length}</li>
+                                <li class="list-group-item">订单数量: ${localStorageData.orders.length}</li>
+                                <li class="list-group-item">生产计划数量: ${localStorageData.productionPlans.length}</li>
+                                <li class="list-group-item">采购订单数量: ${localStorageData.purchaseOrders.length}</li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-8">
+                    <div class="card mb-3">
+                        <div class="card-body">
+                            <h5 class="card-title">数据详情</h5>
+                            <div class="mb-3">
+                                <h6>产品</h6>
+                                <pre>${JSON.stringify(localStorageData.products, null, 2)}</pre>
+                            </div>
+                            <div class="mb-3">
+                                <h6>物料</h6>
+                                <pre>${JSON.stringify(localStorageData.materials, null, 2)}</pre>
+                            </div>
+                            <div class="mb-3">
+                                <h6>供应商</h6>
+                                <pre>${JSON.stringify(localStorageData.suppliers, null, 2)}</pre>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="alert alert-success">
+                测试完成！数据已正确加载到LocalStorage。
+            </div>
+        `;
+
+        // 测试事件触发
+        setTimeout(() => {
+            console.log('触发数据更新事件...');
+            window.dispatchEvent(new CustomEvent('data-updated'));
+            console.log('数据更新事件已触发');
+        }, 2000);
+    </script>
+</head>
+<body>
+    <div class="container mt-5">
+        <h1>测试所有模块数据显示</h1>
+        <div id="result"></div>
+    </div>
+</body>
+</html>

@@ -26,6 +26,9 @@ export default {
                     <a class="nav-link" :class="{ active: activeTab === 'suppliers' }" @click="activeTab = 'suppliers'">供应商</a>
                 </li>
                 <li class="nav-item">
+                    <a class="nav-link" :class="{ active: activeTab === 'customers' }" @click="activeTab = 'customers'">客户</a>
+                </li>
+                <li class="nav-item">
                     <a class="nav-link" :class="{ active: activeTab === 'boms' }" @click="activeTab = 'boms'">BOM</a>
                 </li>
             </ul>
@@ -112,9 +115,7 @@ export default {
                                 <th>名称</th>
                                 <th>联系人</th>
                                 <th>电话</th>
-                                <th>分类</th>
-                                <th>评分</th>
-                                <th>状态</th>
+                                <th>地址</th>
                                 <th>操作</th>
                             </tr>
                         </thead>
@@ -124,24 +125,45 @@ export default {
                                 <td>{{ item.name }}</td>
                                 <td>{{ item.contact }}</td>
                                 <td>{{ item.phone }}</td>
-                                <td>{{ item.category || '未分类' }}</td>
-                                <td>
-                                    <div class="d-flex align-items-center">
-                                        <div class="me-2">{{ item.rating || 0 }}</div>
-                                        <div class="stars">
-                                            <span v-for="i in 5" :key="i" class="star" :class="{ active: i <= (item.rating || 0) }">★</span>
-                                        </div>
-                                    </div>
-                                </td>
-                                <td>
-                                    <span class="badge" :class="item.status === '活跃' ? 'bg-success' : 'bg-secondary'">
-                                        {{ item.status || '活跃' }}
-                                    </span>
-                                </td>
+                                <td>{{ item.address || '' }}</td>
                                 <td>
                                     <button class="btn btn-sm btn-outline-primary" @click="openSupplierModal(item)">编辑</button>
-                                    <button class="btn btn-sm btn-outline-info" @click="openSupplierEvaluationModal(item)">评估</button>
                                     <button class="btn btn-sm btn-outline-danger" @click="deleteSupplier(item.id)">删除</button>
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- 客户管理 -->
+            <div v-if="activeTab === 'customers'">
+                <div class="d-flex justify-content-between align-items-center mb-3">
+                    <h5>客户列表</h5>
+                    <button class="btn btn-primary" @click="openCustomerModal()">添加客户</button>
+                </div>
+                <div class="table-responsive">
+                    <table class="table table-hover">
+                        <thead class="table-light">
+                            <tr>
+                                <th>编码</th>
+                                <th>名称</th>
+                                <th>联系人</th>
+                                <th>电话</th>
+                                <th>地址</th>
+                                <th>操作</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr v-for="item in data.customers" :key="item.id">
+                                <td>{{ item.code }}</td>
+                                <td>{{ item.name }}</td>
+                                <td>{{ item.contact }}</td>
+                                <td>{{ item.phone }}</td>
+                                <td>{{ item.address || '' }}</td>
+                                <td>
+                                    <button class="btn btn-sm btn-outline-primary" @click="openCustomerModal(item)">编辑</button>
+                                    <button class="btn btn-sm btn-outline-danger" @click="deleteCustomer(item.id)">删除</button>
                                 </td>
                             </tr>
                         </tbody>
@@ -385,6 +407,77 @@ export default {
                 </div>
             </div>
 
+            <!-- 客户模态框 -->
+            <div class="modal fade" id="customerModal" tabindex="-1" ref="customerModal">
+                <div class="modal-dialog modal-lg">
+                    <div class="modal-content">
+                        <div class="modal-header">
+                            <h5 class="modal-title">{{ editingCustomer.id ? '编辑客户' : '添加客户' }}</h5>
+                            <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                        </div>
+                        <div class="modal-body">
+                            <form @submit.prevent="saveCustomer">
+                                <div class="mb-3">
+                                    <label class="form-label">编码</label>
+                                    <input type="text" class="form-control" v-model="editingCustomer.code" required>
+                                </div>
+                                <div class="mb-3">
+                                    <label class="form-label">名称</label>
+                                    <input type="text" class="form-control" v-model="editingCustomer.name" required>
+                                </div>
+                                <div class="mb-3">
+                                    <label class="form-label">联系人</label>
+                                    <input type="text" class="form-control" v-model="editingCustomer.contact">
+                                </div>
+                                <div class="mb-3">
+                                    <label class="form-label">电话</label>
+                                    <input type="text" class="form-control" v-model="editingCustomer.phone">
+                                </div>
+                                <div class="mb-3">
+                                    <label class="form-label">地址</label>
+                                    <textarea class="form-control" v-model="editingCustomer.address" rows="2"></textarea>
+                                </div>
+                                <div class="mb-3">
+                                    <label class="form-label">交货日期规则</label>
+                                    <div v-for="(rule, index) in editingCustomer.deliveryRules" :key="index" class="border p-3 mb-2">
+                                        <div class="row mb-2">
+                                            <div class="col-md-4">
+                                                <label class="form-label">规则类型</label>
+                                                <select class="form-select" v-model="rule.type" required>
+                                                    <option value="fixed_days">固定天数</option>
+                                                    <option value="working_days">工作日计算</option>
+                                                    <option value="specific_date">特定日期</option>
+                                                </select>
+                                            </div>
+                                            <div class="col-md-4" v-if="rule.type === 'fixed_days' || rule.type === 'working_days'">
+                                                <label class="form-label">天数</label>
+                                                <input type="number" class="form-control" v-model="rule.days" required min="1">
+                                            </div>
+                                            <div class="col-md-4" v-if="rule.type === 'specific_date'">
+                                                <label class="form-label">每月日期</label>
+                                                <input type="number" class="form-control" v-model="rule.dayOfMonth" required min="1" max="31">
+                                            </div>
+                                            <div class="col-md-4">
+                                                <label class="form-label">优先级</label>
+                                                <input type="number" class="form-control" v-model="rule.priority" required min="1">
+                                            </div>
+                                            <div class="col-md-2 align-self-end">
+                                                <button type="button" class="btn btn-outline-danger" @click="removeDeliveryRule(index)">删除</button>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <button type="button" class="btn btn-outline-primary" @click="addDeliveryRule">添加规则</button>
+                                </div>
+                                <div class="text-end">
+                                    <button type="button" class="btn btn-secondary me-2" data-bs-dismiss="modal">取消</button>
+                                    <button type="submit" class="btn btn-primary">保存</button>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
             <!-- BOM模态框 -->
             <div class="modal fade" id="bomModal" tabindex="-1" ref="bomModal">
                 <div class="modal-dialog modal-lg">
@@ -440,6 +533,7 @@ export default {
             editingProduct: {},
             editingMaterial: {},
             editingSupplier: {},
+            editingCustomer: { deliveryRules: [] },
             editingBom: { items: [] },
             evaluatingSupplier: {},
             evaluation: {
@@ -451,7 +545,27 @@ export default {
             }
         };
     },
+    mounted() {
+        // 监听数据更新事件
+        window.addEventListener('data-updated', this.refreshData);
+    },
+    beforeUnmount() {
+        // 移除事件监听
+        window.removeEventListener('data-updated', this.refreshData);
+    },
+    watch: {
+        // 当组件激活时刷新数据
+        activeTab() {
+            this.refreshData();
+        }
+    },
     methods: {
+        /**
+         * 刷新数据
+         */
+        refreshData() {
+            this.data = loadData();
+        },
         // 产品管理
         openProductModal(product = null) {
             this.editingProduct = product ? { ...product } : { code: '', name: '', description: '', unit: '' };
@@ -516,6 +630,34 @@ export default {
                 this.data.suppliers = this.data.suppliers.filter(s => s.id !== id);
                 saveData(this.data);
             }
+        },
+
+        // 客户管理
+        openCustomerModal(customer = null) {
+            this.editingCustomer = customer ? { ...customer, deliveryRules: [...customer.deliveryRules] } : { code: '', name: '', contact: '', phone: '', address: '', deliveryRules: [{ type: 'fixed_days', days: 7, priority: 1 }] };
+            new bootstrap.Modal(this.$refs.customerModal).show();
+        },
+        saveCustomer() {
+            if (this.editingCustomer.id) {
+                const index = this.data.customers.findIndex(c => c.id === this.editingCustomer.id);
+                if (index !== -1) this.data.customers[index] = { ...this.editingCustomer };
+            } else {
+                this.data.customers.push({ ...this.editingCustomer, id: generateId() });
+            }
+            saveData(this.data);
+            bootstrap.Modal.getInstance(this.$refs.customerModal).hide();
+        },
+        deleteCustomer(id) {
+            if (confirm('确定要删除这个客户吗？')) {
+                this.data.customers = this.data.customers.filter(c => c.id !== id);
+                saveData(this.data);
+            }
+        },
+        addDeliveryRule() {
+            this.editingCustomer.deliveryRules.push({ type: 'fixed_days', days: 7, priority: 1 });
+        },
+        removeDeliveryRule(index) {
+            this.editingCustomer.deliveryRules.splice(index, 1);
         },
 
         // 供应商评估

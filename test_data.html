@@ -1,0 +1,34 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>测试数据加载</title>
+    <script type="module">
+        import { loadData, loadSampleData } from './js/store.js';
+
+        // 测试加载示例数据
+        console.log('加载示例数据...');
+        const sampleData = loadSampleData();
+        console.log('示例数据:', sampleData);
+
+        // 测试从LocalStorage加载数据
+        console.log('从LocalStorage加载数据...');
+        const localStorageData = loadData();
+        console.log('LocalStorage数据:', localStorageData);
+
+        // 显示结果
+        document.getElementById('result').innerHTML = `
+            <h3>测试结果</h3>
+            <p>产品数量: ${localStorageData.products.length}</p>
+            <p>物料数量: ${localStorageData.materials.length}</p>
+            <p>供应商数量: ${localStorageData.suppliers.length}</p>
+            <pre>${JSON.stringify(localStorageData, null, 2)}</pre>
+        `;
+    </script>
+</head>
+<body>
+    <h1>测试数据加载</h1>
+    <div id="result"></div>
+</body>
+</html>

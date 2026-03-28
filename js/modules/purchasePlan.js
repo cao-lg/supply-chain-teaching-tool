@@ -185,7 +185,27 @@ export default {
             editingPurchaseOrder: {}
         };
     },
+    mounted() {
+        // 监听数据更新事件
+        window.addEventListener('data-updated', this.refreshData);
+    },
+    beforeUnmount() {
+        // 移除事件监听
+        window.removeEventListener('data-updated', this.refreshData);
+    },
+    watch: {
+        // 当组件激活时刷新数据
+        activeTab() {
+            this.refreshData();
+        }
+    },
     methods: {
+        /**
+         * 刷新数据
+         */
+        refreshData() {
+            this.data = loadData();
+        },
         /**
          * 获取物料信息
          * @param {string} id - 物料ID

@@ -306,6 +306,12 @@ export default {
             editingWorkhour: {}
         };
     },
+    watch: {
+        // 当组件激活时刷新数据
+        activeTab() {
+            this.refreshData();
+        }
+    },
     computed: {
         /**
          * 计算设备总产能
@@ -340,6 +346,12 @@ export default {
         }
     },
     methods: {
+        /**
+         * 刷新数据
+         */
+        refreshData() {
+            this.data = loadData();
+        },
         // 设备管理
         openEquipmentModal(equipment = null) {
             this.editingEquipment = equipment ? { ...equipment } : { code: '', name: '', type: '', capacityPerDay: 0, status: '正常' };

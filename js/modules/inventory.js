@@ -198,10 +198,27 @@ export default {
             data: loadData(),
             adjustType: 'material',
             adjustItemId: '',
-            adjustMethod: 'add',
             adjustQuantity: 1,
+            adjustMethod: 'add',
             adjustingItem: null
         };
+    },
+    mounted() {
+        // 监听数据更新事件
+        window.addEventListener('data-updated', this.refreshData);
+    },
+    beforeUnmount() {
+        // 移除事件监听
+        window.removeEventListener('data-updated', this.refreshData);
+    },
+    watch: {
+        // 当组件激活时刷新数据
+        activeTab(newTab) {
+            this.refreshData();
+            if (newTab === 'analysis') {
+                setTimeout(() => this.initTurnoverChart(), 100);
+            }
+        }
     },
     computed: {
         materialInventory() {
@@ -210,15 +227,31 @@ export default {
         productInventory() {
             return this.data.inventory.products || [];
         },
-        
         /**
          * 物料周转率
          * @returns {number} 周转率
          */
         materialTurnoverRate() {
-            // 模拟年度消耗数据
-            const annualConsumption = 10000;
+            // 基于生产计划计算物料消耗
+            const productionPlans = this.data.productionPlans || [];
+            const boms = this.data.boms || [];
+            
+            // 计算物料消耗总量
+            let totalMaterialConsumption = 0;
+            productionPlans.forEach(plan => {
+                const bom = boms.find(b => b.productId === plan.productId);
+                if (bom) {
+                    bom.items.forEach(item => {
+                        totalMaterialConsumption += item.quantity * plan.quantity;
+                    });
+                }
+            });
+            
+            // 计算平均物料库存
             const averageMaterialInventory = this.materialInventory.reduce((total, item) => total + item.quantity, 0) / (this.materialInventory.length || 1);
+            
+            // 计算周转率（假设消耗数据为6个月，乘以2得到年度周转率）
+            const annualConsumption = totalMaterialConsumption * 2;
             return averageMaterialInventory > 0 ? annualConsumption / averageMaterialInventory : 0;
         },
         
@@ -227,9 +260,15 @@ export default {
          * @returns {number} 周转率
          */
         productTurnoverRate() {
-            // 模拟年度销售数据
-            const annualSales = 8000;
+            // 基于订单数据计算产品销售
+            const orders = this.data.orders || [];
+            const totalProductSales = orders.reduce((total, order) => total + (order.quantity || 0), 0);
+            
+            // 计算平均产品库存
             const averageProductInventory = this.productInventory.reduce((total, item) => total + item.quantity, 0) / (this.productInventory.length || 1);
+            
+            // 计算周转率（假设销售数据为6个月，乘以2得到年度周转率）
+            const annualSales = totalProductSales * 2;
             return averageProductInventory > 0 ? annualSales / averageProductInventory : 0;
         },
         
@@ -294,6 +333,12 @@ export default {
         }
     },
     methods: {
+        /**
+         * 刷新数据
+         */
+        refreshData() {
+            this.data = loadData();
+        },
         /**
          * 获取物料信息
          * @param {string} id - 物料ID
@@ -378,6 +423,15 @@ export default {
 
             const chart = echarts.init(chartDom);
             
+            // 计算周转率和库存天数
+            const materialTurnover = this.materialTurnoverRate;
+            const productTurnover = this.productTurnoverRate;
+            const averageTurnover = (materialTurnover + productTurnover) / 2;
+            
+            const materialDays = materialTurnover > 0 ? 365 / materialTurnover : 0;
+            const productDays = productTurnover > 0 ? 365 / productTurnover : 0;
+            const averageDays = this.averageInventoryDays;
+            
             chart.setOption({
                 tooltip: {
                     trigger: 'axis',
@@ -415,9 +469,9 @@ export default {
                         name: '周转率',
                         type: 'bar',
                         data: [
-                            this.materialTurnoverRate,
-                            this.productTurnoverRate,
-                            (this.materialTurnoverRate + this.productTurnoverRate) / 2
+                            materialTurnover,
+                            productTurnover,
+                            averageTurnover
                         ]
                     },
                     {
@@ -425,20 +479,14 @@ export default {
                         type: 'line',
                         yAxisIndex: 1,
                         data: [
-                            365 / this.materialTurnoverRate || 0,
-                            365 / this.productTurnoverRate || 0,
-                            this.averageInventoryDays
+                            materialDays,
+                            productDays,
+                            averageDays
                         ]
                     }
                 ]
             });
         }
     },
-    watch: {
-        activeTab(newTab) {
-            if (newTab === 'analysis') {
-                setTimeout(() => this.initTurnoverChart(), 100);
-            }
-        }
-    }
+
 };

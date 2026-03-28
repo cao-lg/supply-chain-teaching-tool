@@ -132,6 +132,8 @@ export default {
                 this.$forceUpdate();
                 this.message = '示例数据加载成功！';
                 setTimeout(() => this.message = '', 3000);
+                // 触发全局事件通知其他组件刷新数据
+                window.dispatchEvent(new CustomEvent('data-updated'));
             }
         },
 

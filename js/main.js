@@ -44,9 +44,32 @@ const app = createApp({
          * 初始化图表
          */
         const initCharts = () => {
+            // 加载数据
+            const data = loadData();
+            
             const chart1Dom = document.getElementById('chart1');
             if (chart1Dom) {
                 chart1 = echarts.init(chart1Dom);
+                
+                // 从订单数据计算销售额
+                const orders = data.orders || [];
+                const monthlySales = {};
+                
+                // 初始化月份数据
+                for (let i = 1; i <= 6; i++) {
+                    monthlySales[i] = 0;
+                }
+                
+                // 计算每月销售额
+                orders.forEach(order => {
+                    const date = new Date(order.deliveryDate);
+                    const month = date.getMonth() + 1;
+                    if (month <= 6) {
+                        // 假设每个产品的平均价格为100元
+                        monthlySales[month] += (order.quantity || 0) * 100;
+                    }
+                });
+                
                 chart1.setOption({
                     tooltip: { trigger: 'axis' },
                     xAxis: { type: 'category', data: ['1月', '2月', '3月', '4月', '5月', '6月'] },
@@ -54,7 +77,7 @@ const app = createApp({
                     series: [{
                         name: '销售额',
                         type: 'line',
-                        data: [120, 200, 150, 80, 70, 110],
+                        data: [monthlySales[1], monthlySales[2], monthlySales[3], monthlySales[4], monthlySales[5], monthlySales[6]],
                         smooth: true
                     }]
                 });
@@ -63,17 +86,23 @@ const app = createApp({
             const chart2Dom = document.getElementById('chart2');
             if (chart2Dom) {
                 chart2 = echarts.init(chart2Dom);
+                
+                // 从库存数据计算库存分布
+                const inventory = data.inventory || { materials: [], products: [] };
+                const materialStock = inventory.materials.reduce((total, item) => total + (item.quantity || 0), 0);
+                const productStock = inventory.products.reduce((total, item) => total + (item.quantity || 0), 0);
+                
                 chart2.setOption({
                     tooltip: { trigger: 'item' },
                     series: [{
                         type: 'pie',
                         radius: '60%',
                         data: [
-                            { value: 1048, name: '原材料' },
-                            { value: 735, name: '半成品' },
-                            { value: 580, name: '成品' },
-                            { value: 484, name: '备品备件' }
-                        ]
+                            { value: materialStock, name: '原材料' },
+                            { value: 0, name: '半成品' }, // 暂不支持半成品数据
+                            { value: productStock, name: '成品' },
+                            { value: 0, name: '备品备件' } // 暂不支持备品备件数据
+                        ].filter(item => item.value > 0)
                     }]
                 });
             }
@@ -81,6 +110,29 @@ const app = createApp({
             const chart3Dom = document.getElementById('chart3');
             if (chart3Dom) {
                 chart3 = echarts.init(chart3Dom);
+                
+                // 从生产计划数据计算产量
+                const productionPlans = data.productionPlans || [];
+                const monthlyPlans = {};
+                const monthlyActuals = {};
+                
+                // 初始化月份数据
+                for (let i = 1; i <= 6; i++) {
+                    monthlyPlans[i] = 0;
+                    monthlyActuals[i] = 0;
+                }
+                
+                // 计算每月计划产量和实际产量
+                productionPlans.forEach(plan => {
+                    const startDate = new Date(plan.startDate);
+                    const month = startDate.getMonth() + 1;
+                    if (month <= 6) {
+                        monthlyPlans[month] += plan.quantity || 0;
+                        // 假设实际产量为计划产量的90%
+                        monthlyActuals[month] += Math.round((plan.quantity || 0) * 0.9);
+                    }
+                });
+                
                 chart3.setOption({
                     tooltip: { trigger: 'axis' },
                     legend: { data: ['计划产量', '实际产量'] },
@@ -90,13 +142,13 @@ const app = createApp({
                         {
                             name: '计划产量',
                             type: 'bar',
-                            data: [120, 132, 101, 134, 90, 230],
+                            data: [monthlyPlans[1], monthlyPlans[2], monthlyPlans[3], monthlyPlans[4], monthlyPlans[5], monthlyPlans[6]],
                             itemStyle: { color: '#36B9CC' }
                         },
                         {
                             name: '实际产量',
                             type: 'bar',
-                            data: [110, 125, 95, 120, 85, 210],
+                            data: [monthlyActuals[1], monthlyActuals[2], monthlyActuals[3], monthlyActuals[4], monthlyActuals[5], monthlyActuals[6]],
                             itemStyle: { color: '#1CC88A' }
                         }
                     ]

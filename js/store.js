@@ -13,6 +13,7 @@ const getDefaultData = () => ({
     products: [],
     materials: [],
     suppliers: [],
+    customers: [],
     boms: [],
     orders: [],
     productionPlans: [],
@@ -118,6 +119,53 @@ export const loadSampleData = () => {
         suppliers: [
             { id: 's1', code: 'S001', name: '电子元件有限公司', contact: '张三', phone: '13800138001', address: '深圳市南山区' },
             { id: 's2', code: 'S002', name: '精密制造有限公司', contact: '李四', phone: '13800138002', address: '东莞市松山湖' }
+        ],
+        customers: [
+            {
+                id: 'c1',
+                code: 'C001',
+                name: '科技有限公司',
+                contact: '王五',
+                phone: '13900139001',
+                address: '北京市海淀区',
+                deliveryRules: [
+                    {
+                        type: 'fixed_days',
+                        days: 7,
+                        priority: 1
+                    }
+                ]
+            },
+            {
+                id: 'c2',
+                code: 'C002',
+                name: '贸易公司',
+                contact: '赵六',
+                phone: '13900139002',
+                address: '上海市浦东新区',
+                deliveryRules: [
+                    {
+                        type: 'working_days',
+                        days: 5,
+                        priority: 1
+                    }
+                ]
+            },
+            {
+                id: 'c3',
+                code: 'C003',
+                name: '制造企业',
+                contact: '钱七',
+                phone: '13900139003',
+                address: '广州市天河区',
+                deliveryRules: [
+                    {
+                        type: 'specific_date',
+                        dayOfMonth: 15,
+                        priority: 1
+                    }
+                ]
+            }
         ],
         boms: [
             {
