@@ -1,13 +1,16 @@
 # CNB 流水线配置
+# 使用密钥仓库导入环境变量，实现安全部署
 main:
   push:
-    - stages:
+    - imports: https://cnb.cool/cao_lg/secrets/-/blob/main/envs.yml
+      stages:
         - name: build
           image: node:20
           script:
             - echo "Building static website..."
+            - echo "Project files are ready for deployment"
         - name: deploy-to-edgeone
           image: node:20
           script:
             - npm install -g edgeone
-            - edgeone pages deploy . -n supply-chain-teaching-tool
+            - edgeone pages deploy . -n supply-chain-teaching-tool -t $EDGEONE_API_TOKEN
