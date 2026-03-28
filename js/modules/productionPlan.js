@@ -38,6 +38,7 @@ export default {
                                 <th>产品</th>
                                 <th>数量</th>
                                 <th>交货日期</th>
+                                <th>优先级</th>
                                 <th>状态</th>
                                 <th>操作</th>
                             </tr>
@@ -47,7 +48,15 @@ export default {
                                 <td>{{ item.orderNo }}</td>
                                 <td>{{ getProductName(item.productId) }}</td>
                                 <td>{{ item.quantity }}</td>
-                                <td>{{ item.deliveryDate }}</td>
+                                <td :class="{ 'text-danger': isDeliveryDateUrgent(item) }">
+                                    {{ item.deliveryDate }}
+                                    <span v-if="isDeliveryDateUrgent(item)" class="ms-1">⚠️</span>
+                                </td>
+                                <td>
+                                    <span class="badge" :class="getPriorityBadgeClass(item.priority)">
+                                        {{ item.priority || '普通' }}
+                                    </span>
+                                </td>
                                 <td>
                                     <span class="badge" :class="getStatusBadgeClass(item.status)">
                                         {{ item.status }}
@@ -139,6 +148,14 @@ export default {
                                     <input type="date" class="form-control" v-model="editingOrder.deliveryDate" required>
                                 </div>
                                 <div class="mb-3">
+                                    <label class="form-label">优先级</label>
+                                    <select class="form-select" v-model="editingOrder.priority">
+                                        <option value="普通">普通</option>
+                                        <option value="重要">重要</option>
+                                        <option value="紧急">紧急</option>
+                                    </select>
+                                </div>
+                                <div class="mb-3">
                                     <label class="form-label">状态</label>
                                     <select class="form-select" v-model="editingOrder.status">
                                         <option value="待处理">待处理</option>
@@ -219,6 +236,33 @@ export default {
         },
 
         /**
+         * 获取优先级徽章样式类
+         * @param {string} priority - 优先级
+         * @returns {string} 样式类
+         */
+        getPriorityBadgeClass(priority) {
+            switch (priority) {
+                case '紧急': return 'bg-danger';
+                case '重要': return 'bg-warning';
+                case '普通': return 'bg-info';
+                default: return 'bg-info';
+            }
+        },
+
+        /**
+         * 检查交货日期是否紧急
+         * @param {Object} order - 订单对象
+         * @returns {boolean} 是否紧急
+         */
+        isDeliveryDateUrgent(order) {
+            const deliveryDate = new Date(order.deliveryDate);
+            const today = new Date();
+            const diffTime = deliveryDate - today;
+            const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+            return diffDays <= 3;
+        },
+
+        /**
          * 打开订单模态框
          * @param {Object} order - 订单对象
          */
@@ -228,6 +272,7 @@ export default {
                 productId: '', 
                 quantity: 1, 
                 deliveryDate: '', 
+                priority: '普通',
                 status: '待处理' 
             };
             new bootstrap.Modal(this.$refs.orderModal).show();
@@ -263,9 +308,32 @@ export default {
          * @param {Object} order - 订单对象
          */
         generatePlan(order) {
+            // 计算生产能力
+            const totalCapacity = this.calculateTotalCapacity();
+            
+            // 检查是否有足够的生产能力
+            if (totalCapacity > 0 && order.quantity > totalCapacity) {
+                alert(`生产能力不足！当前总产能为 ${totalCapacity} 单位/天，订单需求为 ${order.quantity} 单位。`);
+                return;
+            }
+            
             const deliveryDate = new Date(order.deliveryDate);
             const startDate = new Date(deliveryDate);
-            startDate.setDate(startDate.getDate() - 7);
+            
+            // 根据生产能力计算生产天数
+            if (totalCapacity > 0) {
+                const productionDays = Math.ceil(order.quantity / totalCapacity);
+                startDate.setDate(startDate.getDate() - productionDays);
+            } else {
+                // 默认7天
+                startDate.setDate(startDate.getDate() - 7);
+            }
+
+            // 检查资源冲突
+            if (this.checkResourceConflict(startDate, deliveryDate)) {
+                alert('检测到资源冲突！请调整生产计划时间。');
+                return;
+            }
 
             const plan = {
                 id: generateId(),
@@ -281,6 +349,27 @@ export default {
             order.status = '进行中';
             saveData(this.data);
             alert('生产计划生成成功！');
+        },
+
+        /**
+         * 检查资源冲突
+         * @param {Date} startDate - 开始日期
+         * @param {Date} endDate - 结束日期
+         * @returns {boolean} 是否存在冲突
+         */
+        checkResourceConflict(startDate, endDate) {
+            for (const plan of this.data.productionPlans) {
+                const planStart = new Date(plan.startDate);
+                const planEnd = new Date(plan.endDate);
+                
+                // 检查时间重叠
+                if ((startDate >= planStart && startDate <= planEnd) ||
+                    (endDate >= planStart && endDate <= planEnd) ||
+                    (startDate <= planStart && endDate >= planEnd)) {
+                    return true;
+                }
+            }
+            return false;
         },
 
         /**
@@ -324,14 +413,22 @@ export default {
 
             const chart = echarts.init(chartDom);
             
+            // 计算生产能力
+            const totalCapacity = this.calculateTotalCapacity();
+            
             const seriesData = this.data.productionPlans.map(plan => {
                 const product = this.getProductName(plan.productId);
                 const statusColor = plan.status === '已完成' ? '#52c41a' : 
                                     plan.status === '进行中' ? '#faad14' : '#1890ff';
+                
+                // 检查是否超出生产能力
+                const isOverCapacity = plan.quantity > totalCapacity;
+                const color = isOverCapacity ? '#ff4d4f' : statusColor;
+                
                 return {
                     name: product,
                     value: [plan.startDate, plan.endDate, plan.quantity],
-                    itemStyle: { color: statusColor }
+                    itemStyle: { color: color }
                 };
             });
 
@@ -340,7 +437,8 @@ export default {
                     trigger: 'axis',
                     formatter: (params) => {
                         const data = params[0];
-                        return `${data.name}<br/>开始: ${data.value[0]}<br/>结束: ${data.value[1]}<br/>数量: ${data.value[2]}`;
+                        const capacityInfo = totalCapacity > 0 ? `<br/>生产能力: ${totalCapacity} 单位/天` : '';
+                        return `${data.name}<br/>开始: ${data.value[0]}<br/>结束: ${data.value[1]}<br/>数量: ${data.value[2]}${capacityInfo}`;
                     }
                 },
                 xAxis: {
@@ -360,6 +458,20 @@ export default {
                     }
                 }]
             });
+        },
+
+        /**
+         * 计算总生产能力
+         * @returns {number} 总生产能力
+         */
+        calculateTotalCapacity() {
+            // 从生产能力管理模块获取设备总产能
+            if (this.data.equipment) {
+                return this.data.equipment
+                    .filter(e => e.status === '正常')
+                    .reduce((total, equipment) => total + equipment.capacityPerDay, 0);
+            }
+            return 0;
         }
     },
     mounted() {

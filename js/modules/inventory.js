@@ -22,6 +22,9 @@ export default {
                 <li class="nav-item">
                     <a class="nav-link" :class="{ active: activeTab === 'products' }" @click="activeTab = 'products'">产品库存</a>
                 </li>
+                <li class="nav-item">
+                    <a class="nav-link" :class="{ active: activeTab === 'analysis' }" @click="activeTab = 'analysis'">库存分析</a>
+                </li>
             </ul>
 
             <!-- 物料库存 -->
@@ -95,6 +98,55 @@ export default {
                 </div>
             </div>
 
+            <!-- 库存分析 -->
+            <div v-if="activeTab === 'analysis'">
+                <div class="card mb-4">
+                    <div class="card-body">
+                        <h5 class="card-title">库存周转率分析</h5>
+                        <div class="row mb-4">
+                            <div class="col-md-4 mb-3">
+                                <div class="card bg-light">
+                                    <div class="card-body">
+                                        <h6 class="card-subtitle mb-2 text-muted">物料周转率</h6>
+                                        <p class="card-text fs-4">{{ materialTurnoverRate.toFixed(2) }} 次/年</p>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-md-4 mb-3">
+                                <div class="card bg-light">
+                                    <div class="card-body">
+                                        <h6 class="card-subtitle mb-2 text-muted">产品周转率</h6>
+                                        <p class="card-text fs-4">{{ productTurnoverRate.toFixed(2) }} 次/年</p>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-md-4 mb-3">
+                                <div class="card bg-light">
+                                    <div class="card-body">
+                                        <h6 class="card-subtitle mb-2 text-muted">平均库存天数</h6>
+                                        <p class="card-text fs-4">{{ averageInventoryDays.toFixed(0) }} 天</p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div id="turnoverChart" class="chart-container" style="height: 400px;"></div>
+                    </div>
+                </div>
+                
+                <div class="card mb-4">
+                    <div class="card-body">
+                        <h5 class="card-title">库存优化建议</h5>
+                        <div class="list-group">
+                            <div v-for="(suggestion, index) in inventorySuggestions" :key="index" class="list-group-item">
+                                <h6 class="mb-1">{{ suggestion.title }}</h6>
+                                <p class="mb-1">{{ suggestion.description }}</p>
+                                <small class="text-muted">{{ suggestion.type }}</small>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
             <!-- 库存调整模态框 -->
             <div class="modal fade" id="inventoryAdjustModal" tabindex="-1" ref="inventoryAdjustModal">
                 <div class="modal-dialog">
@@ -157,6 +209,88 @@ export default {
         },
         productInventory() {
             return this.data.inventory.products || [];
+        },
+        
+        /**
+         * 物料周转率
+         * @returns {number} 周转率
+         */
+        materialTurnoverRate() {
+            // 模拟年度消耗数据
+            const annualConsumption = 10000;
+            const averageMaterialInventory = this.materialInventory.reduce((total, item) => total + item.quantity, 0) / (this.materialInventory.length || 1);
+            return averageMaterialInventory > 0 ? annualConsumption / averageMaterialInventory : 0;
+        },
+        
+        /**
+         * 产品周转率
+         * @returns {number} 周转率
+         */
+        productTurnoverRate() {
+            // 模拟年度销售数据
+            const annualSales = 8000;
+            const averageProductInventory = this.productInventory.reduce((total, item) => total + item.quantity, 0) / (this.productInventory.length || 1);
+            return averageProductInventory > 0 ? annualSales / averageProductInventory : 0;
+        },
+        
+        /**
+         * 平均库存天数
+         * @returns {number} 平均库存天数
+         */
+        averageInventoryDays() {
+            const totalTurnover = this.materialTurnoverRate + this.productTurnoverRate;
+            return totalTurnover > 0 ? 365 / (totalTurnover / 2) : 0;
+        },
+        
+        /**
+         * 库存优化建议
+         * @returns {Array} 优化建议列表
+         */
+        inventorySuggestions() {
+            const suggestions = [];
+            
+            // 检查物料库存预警
+            this.materialInventory.forEach(item => {
+                if (item.quantity < item.safeStock) {
+                    suggestions.push({
+                        title: `物料 ${this.getMaterial(item.materialId)?.name} 库存不足`,
+                        description: `当前库存 ${item.quantity}，安全库存 ${item.safeStock}，建议及时补货`,
+                        type: '预警'
+                    });
+                }
+            });
+            
+            // 检查周转率
+            if (this.materialTurnoverRate < 5) {
+                suggestions.push({
+                    title: '物料周转率偏低',
+                    description: '物料周转率低于行业平均水平，建议优化采购计划和库存管理',
+                    type: '优化建议'
+                });
+            }
+            
+            if (this.productTurnoverRate < 8) {
+                suggestions.push({
+                    title: '产品周转率偏低',
+                    description: '产品周转率低于行业平均水平，建议加强销售和生产计划协调',
+                    type: '优化建议'
+                });
+            }
+            
+            // 检查库存天数
+            if (this.averageInventoryDays > 60) {
+                suggestions.push({
+                    title: '平均库存天数过长',
+                    description: '平均库存天数超过60天，建议优化库存结构，减少滞销品库存',
+                    type: '优化建议'
+                });
+            }
+            
+            return suggestions.length > 0 ? suggestions : [{
+                title: '库存管理良好',
+                description: '当前库存水平和周转率处于合理范围',
+                type: '状态'
+            }];
         }
     },
     methods: {
@@ -233,6 +367,78 @@ export default {
 
             saveData(this.data);
             bootstrap.Modal.getInstance(this.$refs.inventoryAdjustModal).hide();
+        },
+
+        /**
+         * 初始化库存周转率图表
+         */
+        initTurnoverChart() {
+            const chartDom = document.getElementById('turnoverChart');
+            if (!chartDom) return;
+
+            const chart = echarts.init(chartDom);
+            
+            chart.setOption({
+                tooltip: {
+                    trigger: 'axis',
+                    axisPointer: {
+                        type: 'shadow'
+                    }
+                },
+                legend: {
+                    data: ['周转率', '库存天数']
+                },
+                grid: {
+                    left: '3%',
+                    right: '4%',
+                    bottom: '3%',
+                    containLabel: true
+                },
+                xAxis: {
+                    type: 'category',
+                    data: ['物料', '产品', '平均']
+                },
+                yAxis: [
+                    {
+                        type: 'value',
+                        name: '周转率(次/年)',
+                        position: 'left'
+                    },
+                    {
+                        type: 'value',
+                        name: '库存天数(天)',
+                        position: 'right'
+                    }
+                ],
+                series: [
+                    {
+                        name: '周转率',
+                        type: 'bar',
+                        data: [
+                            this.materialTurnoverRate,
+                            this.productTurnoverRate,
+                            (this.materialTurnoverRate + this.productTurnoverRate) / 2
+                        ]
+                    },
+                    {
+                        name: '库存天数',
+                        type: 'line',
+                        yAxisIndex: 1,
+                        data: [
+                            365 / this.materialTurnoverRate || 0,
+                            365 / this.productTurnoverRate || 0,
+                            this.averageInventoryDays
+                        ]
+                    }
+                ]
+            });
+        }
+    },
+    watch: {
+        activeTab(newTab) {
+            if (newTab === 'analysis') {
+                setTimeout(() => this.initTurnoverChart(), 100);
+            }
         }
     }
 };

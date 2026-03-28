@@ -8,6 +8,11 @@ import ProductionPlanModule from './modules/productionPlan.js';
 import PurchasePlanModule from './modules/purchasePlan.js';
 import InventoryModule from './modules/inventory.js';
 import DataManagerModule from './modules/dataManager.js';
+import ProductionCapacityModule from './modules/productionCapacity.js';
+import DemandForecastModule from './modules/demandForecast.js';
+import LogisticsModule from './modules/logistics.js';
+import CustomerServiceModule from './modules/customerService.js';
+import DataAnalysisModule from './modules/dataAnalysis.js';
 
 const { createApp, ref, onMounted, watch } = Vue;
 
@@ -17,9 +22,10 @@ const { createApp, ref, onMounted, watch } = Vue;
 const app = createApp({
     setup() {
         const currentPage = ref(0);
-        const navItems = ['首页', '基础资料', '生产计划', '采购计划', '库存管理', '数据管理'];
+        const navItems = ['首页', '基础资料', '生产计划', '采购计划', '库存管理', '生产能力', '需求预测', '物流配送', '客户服务', '数据分析', '数据管理']
         let chart1 = null;
         let chart2 = null;
+        let chart3 = null;
 
         /**
          * 切换页面
@@ -71,6 +77,31 @@ const app = createApp({
                     }]
                 });
             }
+
+            const chart3Dom = document.getElementById('chart3');
+            if (chart3Dom) {
+                chart3 = echarts.init(chart3Dom);
+                chart3.setOption({
+                    tooltip: { trigger: 'axis' },
+                    legend: { data: ['计划产量', '实际产量'] },
+                    xAxis: { type: 'category', data: ['1月', '2月', '3月', '4月', '5月', '6月'] },
+                    yAxis: { type: 'value' },
+                    series: [
+                        {
+                            name: '计划产量',
+                            type: 'bar',
+                            data: [120, 132, 101, 134, 90, 230],
+                            itemStyle: { color: '#36B9CC' }
+                        },
+                        {
+                            name: '实际产量',
+                            type: 'bar',
+                            data: [110, 125, 95, 120, 85, 210],
+                            itemStyle: { color: '#1CC88A' }
+                        }
+                    ]
+                });
+            }
         };
 
         /**
@@ -79,6 +110,7 @@ const app = createApp({
         const handleResize = () => {
             chart1 && chart1.resize();
             chart2 && chart2.resize();
+            chart3 && chart3.resize();
         };
 
         onMounted(() => {
@@ -100,5 +132,10 @@ app.component('production-plan-module', ProductionPlanModule);
 app.component('purchase-plan-module', PurchasePlanModule);
 app.component('inventory-module', InventoryModule);
 app.component('data-manager-module', DataManagerModule);
+app.component('production-capacity-module', ProductionCapacityModule);
+app.component('demand-forecast-module', DemandForecastModule);
+app.component('logistics-module', LogisticsModule);
+app.component('customer-service-module', CustomerServiceModule);
+app.component('data-analysis-module', DataAnalysisModule);
 
 app.mount('#app');

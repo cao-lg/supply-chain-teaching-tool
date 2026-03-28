@@ -112,7 +112,9 @@ export default {
                                 <th>名称</th>
                                 <th>联系人</th>
                                 <th>电话</th>
-                                <th>地址</th>
+                                <th>分类</th>
+                                <th>评分</th>
+                                <th>状态</th>
                                 <th>操作</th>
                             </tr>
                         </thead>
@@ -122,9 +124,23 @@ export default {
                                 <td>{{ item.name }}</td>
                                 <td>{{ item.contact }}</td>
                                 <td>{{ item.phone }}</td>
-                                <td>{{ item.address }}</td>
+                                <td>{{ item.category || '未分类' }}</td>
+                                <td>
+                                    <div class="d-flex align-items-center">
+                                        <div class="me-2">{{ item.rating || 0 }}</div>
+                                        <div class="stars">
+                                            <span v-for="i in 5" :key="i" class="star" :class="{ active: i <= (item.rating || 0) }">★</span>
+                                        </div>
+                                    </div>
+                                </td>
+                                <td>
+                                    <span class="badge" :class="item.status === '活跃' ? 'bg-success' : 'bg-secondary'">
+                                        {{ item.status || '活跃' }}
+                                    </span>
+                                </td>
                                 <td>
                                     <button class="btn btn-sm btn-outline-primary" @click="openSupplierModal(item)">编辑</button>
+                                    <button class="btn btn-sm btn-outline-info" @click="openSupplierEvaluationModal(item)">评估</button>
                                     <button class="btn btn-sm btn-outline-danger" @click="deleteSupplier(item.id)">删除</button>
                                 </td>
                             </tr>
@@ -277,9 +293,91 @@ export default {
                                     <label class="form-label">地址</label>
                                     <textarea class="form-control" v-model="editingSupplier.address" rows="2"></textarea>
                                 </div>
+                                <div class="mb-3">
+                                    <label class="form-label">分类</label>
+                                    <select class="form-select" v-model="editingSupplier.category">
+                                        <option value="">未分类</option>
+                                        <option value="战略供应商">战略供应商</option>
+                                        <option value="核心供应商">核心供应商</option>
+                                        <option value="一般供应商">一般供应商</option>
+                                        <option value="临时供应商">临时供应商</option>
+                                    </select>
+                                </div>
+                                <div class="mb-3">
+                                    <label class="form-label">状态</label>
+                                    <select class="form-select" v-model="editingSupplier.status">
+                                        <option value="活跃">活跃</option>
+                                        <option value="暂停">暂停</option>
+                                        <option value="终止">终止</option>
+                                    </select>
+                                </div>
                                 <div class="text-end">
                                     <button type="button" class="btn btn-secondary me-2" data-bs-dismiss="modal">取消</button>
                                     <button type="submit" class="btn btn-primary">保存</button>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 供应商评估模态框 -->
+            <div class="modal fade" id="supplierEvaluationModal" tabindex="-1" ref="supplierEvaluationModal">
+                <div class="modal-dialog">
+                    <div class="modal-content">
+                        <div class="modal-header">
+                            <h5 class="modal-title">供应商评估 - {{ evaluatingSupplier.name }}</h5>
+                            <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                        </div>
+                        <div class="modal-body">
+                            <form @submit.prevent="saveSupplierEvaluation">
+                                <div class="mb-3">
+                                    <label class="form-label">整体评分</label>
+                                    <div class="d-flex align-items-center">
+                                        <input type="range" class="form-range me-3" v-model="evaluation.rating" min="0" max="5" step="0.5" style="flex: 1;">
+                                        <span class="fs-4">{{ evaluation.rating }}</span>
+                                    </div>
+                                    <div class="stars mt-2">
+                                        <span v-for="i in 5" :key="i" class="star" :class="{ active: i <= evaluation.rating }" @click="evaluation.rating = i">★</span>
+                                    </div>
+                                </div>
+                                <div class="mb-3">
+                                    <label class="form-label">质量评分</label>
+                                    <select class="form-select" v-model="evaluation.qualityScore">
+                                        <option value="5">优秀</option>
+                                        <option value="4">良好</option>
+                                        <option value="3">一般</option>
+                                        <option value="2">较差</option>
+                                        <option value="1">差</option>
+                                    </select>
+                                </div>
+                                <div class="mb-3">
+                                    <label class="form-label">交期评分</label>
+                                    <select class="form-select" v-model="evaluation.deliveryScore">
+                                        <option value="5">优秀</option>
+                                        <option value="4">良好</option>
+                                        <option value="3">一般</option>
+                                        <option value="2">较差</option>
+                                        <option value="1">差</option>
+                                    </select>
+                                </div>
+                                <div class="mb-3">
+                                    <label class="form-label">服务评分</label>
+                                    <select class="form-select" v-model="evaluation.serviceScore">
+                                        <option value="5">优秀</option>
+                                        <option value="4">良好</option>
+                                        <option value="3">一般</option>
+                                        <option value="2">较差</option>
+                                        <option value="1">差</option>
+                                    </select>
+                                </div>
+                                <div class="mb-3">
+                                    <label class="form-label">评价</label>
+                                    <textarea class="form-control" v-model="evaluation.comment" rows="3"></textarea>
+                                </div>
+                                <div class="text-end">
+                                    <button type="button" class="btn btn-secondary me-2" data-bs-dismiss="modal">取消</button>
+                                    <button type="submit" class="btn btn-primary">保存评估</button>
                                 </div>
                             </form>
                         </div>
@@ -342,7 +440,15 @@ export default {
             editingProduct: {},
             editingMaterial: {},
             editingSupplier: {},
-            editingBom: { items: [] }
+            editingBom: { items: [] },
+            evaluatingSupplier: {},
+            evaluation: {
+                rating: 0,
+                qualityScore: 3,
+                deliveryScore: 3,
+                serviceScore: 3,
+                comment: ''
+            }
         };
     },
     methods: {
@@ -409,6 +515,36 @@ export default {
             if (confirm('确定要删除这个供应商吗？')) {
                 this.data.suppliers = this.data.suppliers.filter(s => s.id !== id);
                 saveData(this.data);
+            }
+        },
+
+        // 供应商评估
+        openSupplierEvaluationModal(supplier) {
+            this.evaluatingSupplier = { ...supplier };
+            this.evaluation = {
+                rating: supplier.rating || 0,
+                qualityScore: supplier.qualityScore || 3,
+                deliveryScore: supplier.deliveryScore || 3,
+                serviceScore: supplier.serviceScore || 3,
+                comment: supplier.comment || ''
+            };
+            new bootstrap.Modal(this.$refs.supplierEvaluationModal).show();
+        },
+        saveSupplierEvaluation() {
+            const index = this.data.suppliers.findIndex(s => s.id === this.evaluatingSupplier.id);
+            if (index !== -1) {
+                this.data.suppliers[index] = {
+                    ...this.data.suppliers[index],
+                    rating: this.evaluation.rating,
+                    qualityScore: this.evaluation.qualityScore,
+                    deliveryScore: this.evaluation.deliveryScore,
+                    serviceScore: this.evaluation.serviceScore,
+                    comment: this.evaluation.comment,
+                    lastEvaluationDate: new Date().toISOString().split('T')[0]
+                };
+                saveData(this.data);
+                bootstrap.Modal.getInstance(this.$refs.supplierEvaluationModal).hide();
+                alert('供应商评估保存成功！');
             }
         },
 
