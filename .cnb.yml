@@ -1,0 +1,13 @@
+# CNB 流水线配置
+main:
+  push:
+    - stages:
+        - name: build
+          image: node:20
+          script:
+            - echo "Building static website..."
+        - name: deploy-to-edgeone
+          image: node:20
+          script:
+            - npm install -g edgeone
+            - edgeone pages deploy . -n supply-chain-teaching-tool

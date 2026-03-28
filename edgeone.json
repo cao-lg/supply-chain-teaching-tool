@@ -1,0 +1,18 @@
+{
+  "name": "supply-chain-teaching-tool",
+  "version": "1.0.0",
+  "description": "供应链管理教学工具",
+  "buildCommand": "",
+  "outputDirectory": ".",
+  "devCommand": "python -m http.server 8080",
+  "routes": [
+    {
+      "src": "/(.*)",
+      "dest": "/$1"
+    },
+    {
+      "src": "/.*",
+      "dest": "/index.html"
+    }
+  ]
+}
