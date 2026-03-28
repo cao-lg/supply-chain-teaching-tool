@@ -2,7 +2,7 @@
 <html lang="zh-CN">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>供应链管理教学工具</title>
     <link href="https://unpkg.com/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
@@ -15,7 +15,7 @@
         <nav class="navbar navbar-expand-lg navbar-dark bg-primary shadow">
             <div class="container-fluid">
                 <a class="navbar-brand" href="#">供应链管理教学工具</a>
-                <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+                <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav" aria-expanded="false" aria-label="Toggle navigation">
                     <span class="navbar-toggler-icon"></span>
                 </button>
                 <div class="collapse navbar-collapse" id="navbarNav">
@@ -38,7 +38,7 @@
                 
                 <!-- 关键指标概览 -->
                 <div class="row mb-6">
-                    <div class="col-lg-3 col-md-6 mb-4">
+                    <div class="col-lg-3 col-md-6 col-sm-6 col-12 mb-3">
                         <div class="card border-left-primary shadow h-100 py-2">
                             <div class="card-body">
                                 <div class="row no-gutters align-items-center">
@@ -55,7 +55,7 @@
                             </div>
                         </div>
                     </div>
-                    <div class="col-lg-3 col-md-6 mb-4">
+                    <div class="col-lg-3 col-md-6 col-sm-6 col-12 mb-3">
                         <div class="card border-left-success shadow h-100 py-2">
                             <div class="card-body">
                                 <div class="row no-gutters align-items-center">
@@ -72,7 +72,7 @@
                             </div>
                         </div>
                     </div>
-                    <div class="col-lg-3 col-md-6 mb-4">
+                    <div class="col-lg-3 col-md-6 col-sm-6 col-12 mb-3">
                         <div class="card border-left-warning shadow h-100 py-2">
                             <div class="card-body">
                                 <div class="row no-gutters align-items-center">
@@ -89,7 +89,7 @@
                             </div>
                         </div>
                     </div>
-                    <div class="col-lg-3 col-md-6 mb-4">
+                    <div class="col-lg-3 col-md-6 col-sm-6 col-12 mb-3">
                         <div class="card border-left-info shadow h-100 py-2">
                             <div class="card-body">
                                 <div class="row no-gutters align-items-center">
@@ -110,7 +110,7 @@
                 
                 <!-- 图表区域 -->
                 <div class="row mb-6">
-                    <div class="col-lg-6 mb-4">
+                    <div class="col-lg-6 col-md-12 mb-3">
                         <div class="card shadow mb-4">
                             <div class="card-header py-3">
                                 <h6 class="m-0 font-weight-bold text-primary">销售趋势</h6>
@@ -122,7 +122,7 @@
                             </div>
                         </div>
                     </div>
-                    <div class="col-lg-6 mb-4">
+                    <div class="col-lg-6 col-md-12 mb-3">
                         <div class="card shadow mb-4">
                             <div class="card-header py-3">
                                 <h6 class="m-0 font-weight-bold text-primary">库存结构</h6>
@@ -134,7 +134,7 @@
                             </div>
                         </div>
                     </div>
-                    <div class="col-lg-12 mb-4">
+                    <div class="col-lg-12 mb-3">
                         <div class="card shadow mb-4">
                             <div class="card-header py-3">
                                 <h6 class="m-0 font-weight-bold text-primary">生产计划执行情况</h6>
@@ -150,66 +150,66 @@
                 
                 <!-- 快速导航区域 -->
                 <div class="row mb-6">
-                    <div class="col-12 mb-4">
+                    <div class="col-12 mb-3">
                         <h3 class="h4 mb-3 font-weight-bold text-gray-800">快速导航</h3>
                         <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
                             <div class="card border-0 shadow-sm card-hover" @click="switchPage(1)">
-                                <div class="card-body text-center p-4">
-                                    <i class="fas fa-database fa-3x text-primary mb-3"></i>
+                                <div class="card-body text-center p-3">
+                                    <i class="fas fa-database fa-2x text-primary mb-2"></i>
                                     <h5 class="card-title">基础资料</h5>
                                 </div>
                             </div>
                             <div class="card border-0 shadow-sm card-hover" @click="switchPage(2)">
-                                <div class="card-body text-center p-4">
-                                    <i class="fas fa-calendar-alt fa-3x text-success mb-3"></i>
+                                <div class="card-body text-center p-3">
+                                    <i class="fas fa-calendar-alt fa-2x text-success mb-2"></i>
                                     <h5 class="card-title">生产计划</h5>
                                 </div>
                             </div>
                             <div class="card border-0 shadow-sm card-hover" @click="switchPage(3)">
-                                <div class="card-body text-center p-4">
-                                    <i class="fas fa-shopping-basket fa-3x text-warning mb-3"></i>
+                                <div class="card-body text-center p-3">
+                                    <i class="fas fa-shopping-basket fa-2x text-warning mb-2"></i>
                                     <h5 class="card-title">采购计划</h5>
                                 </div>
                             </div>
                             <div class="card border-0 shadow-sm card-hover" @click="switchPage(4)">
-                                <div class="card-body text-center p-4">
-                                    <i class="fas fa-warehouse fa-3x text-info mb-3"></i>
+                                <div class="card-body text-center p-3">
+                                    <i class="fas fa-warehouse fa-2x text-info mb-2"></i>
                                     <h5 class="card-title">库存管理</h5>
                                 </div>
                             </div>
                             <div class="card border-0 shadow-sm card-hover" @click="switchPage(5)">
-                                <div class="card-body text-center p-4">
-                                    <i class="fas fa-cogs fa-3x text-primary mb-3"></i>
+                                <div class="card-body text-center p-3">
+                                    <i class="fas fa-cogs fa-2x text-primary mb-2"></i>
                                     <h5 class="card-title">生产能力</h5>
                                 </div>
                             </div>
                             <div class="card border-0 shadow-sm card-hover" @click="switchPage(6)">
-                                <div class="card-body text-center p-4">
-                                    <i class="fas fa-chart-line fa-3x text-success mb-3"></i>
+                                <div class="card-body text-center p-3">
+                                    <i class="fas fa-chart-line fa-2x text-success mb-2"></i>
                                     <h5 class="card-title">需求预测</h5>
                                 </div>
                             </div>
                             <div class="card border-0 shadow-sm card-hover" @click="switchPage(7)">
-                                <div class="card-body text-center p-4">
-                                    <i class="fas fa-truck fa-3x text-warning mb-3"></i>
+                                <div class="card-body text-center p-3">
+                                    <i class="fas fa-truck fa-2x text-warning mb-2"></i>
                                     <h5 class="card-title">物流配送</h5>
                                 </div>
                             </div>
                             <div class="card border-0 shadow-sm card-hover" @click="switchPage(8)">
-                                <div class="card-body text-center p-4">
-                                    <i class="fas fa-headset fa-3x text-info mb-3"></i>
+                                <div class="card-body text-center p-3">
+                                    <i class="fas fa-headset fa-2x text-info mb-2"></i>
                                     <h5 class="card-title">客户服务</h5>
                                 </div>
                             </div>
                             <div class="card border-0 shadow-sm card-hover" @click="switchPage(9)">
-                                <div class="card-body text-center p-4">
-                                    <i class="fas fa-chart-pie fa-3x text-primary mb-3"></i>
+                                <div class="card-body text-center p-3">
+                                    <i class="fas fa-chart-pie fa-2x text-primary mb-2"></i>
                                     <h5 class="card-title">数据分析</h5>
                                 </div>
                             </div>
                             <div class="card border-0 shadow-sm card-hover" @click="switchPage(10)">
-                                <div class="card-body text-center p-4">
-                                    <i class="fas fa-tools fa-3x text-success mb-3"></i>
+                                <div class="card-body text-center p-3">
+                                    <i class="fas fa-tools fa-2x text-success mb-2"></i>
                                     <h5 class="card-title">数据管理</h5>
                                 </div>
                             </div>
