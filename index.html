@@ -303,13 +303,23 @@
                 <customer-service-module></customer-service-module>
             </div>
 
-            <!-- 数据分析 -->
+            <!-- 质量检验 -->
             <div v-show="currentPage === 9">
+                <quality-control-module></quality-control-module>
+            </div>
+
+            <!-- 数据分析 -->
+            <div v-show="currentPage === 10">
                 <data-analysis-module></data-analysis-module>
             </div>
 
+            <!-- 财务管理 -->
+            <div v-show="currentPage === 11">
+                <finance-module></finance-module>
+            </div>
+
             <!-- 数据管理 -->
-            <div v-show="currentPage === 10">
+            <div v-show="currentPage === 12">
                 <data-manager-module></data-manager-module>
             </div>
         </div>
