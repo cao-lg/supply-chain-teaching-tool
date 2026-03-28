@@ -129,6 +129,7 @@ export default {
         handleLoadSampleData() {
             if (confirm('加载示例数据将覆盖当前数据，确定继续吗？')) {
                 this.data = loadSampleData();
+                this.$forceUpdate();
                 this.message = '示例数据加载成功！';
                 setTimeout(() => this.message = '', 3000);
             }
