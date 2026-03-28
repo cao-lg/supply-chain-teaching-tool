@@ -13,6 +13,7 @@ import DemandForecastModule from './modules/demandForecast.js';
 import LogisticsModule from './modules/logistics.js';
 import CustomerServiceModule from './modules/customerService.js';
 import DataAnalysisModule from './modules/dataAnalysis.js';
+import QualityControlModule from './modules/qualityControl.js';
 import FinanceModule from './modules/finance.js';
 
 const { createApp, ref, onMounted, watch } = Vue;
