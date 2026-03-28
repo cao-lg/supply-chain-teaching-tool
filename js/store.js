@@ -21,7 +21,10 @@ const getDefaultData = () => ({
     inventory: {
         materials: [],
         products: []
-    }
+    },
+    inventoryTransactions: [],
+    qualityInspections: [],
+    financialRecords: []
 });
 
 /**
@@ -191,7 +194,87 @@ export const loadSampleData = () => {
                 { productId: 'p1', quantity: 20 },
                 { productId: 'p2', quantity: 15 }
             ]
-        }
+        },
+        inventoryTransactions: [
+            {
+                id: 'it1',
+                type: 'purchase_in',
+                materialId: 'm1',
+                productId: null,
+                quantity: 50,
+                referenceDoc: 'PO-20260301-001',
+                date: '2026-03-01',
+                remark: '采购入库-锂电池'
+            },
+            {
+                id: 'it2',
+                type: 'production_in',
+                materialId: null,
+                productId: 'p1',
+                quantity: 10,
+                referenceDoc: 'PP-20260315-001',
+                date: '2026-03-15',
+                remark: '生产入库-智能手表'
+            },
+            {
+                id: 'it3',
+                type: 'sale_out',
+                materialId: null,
+                productId: 'p1',
+                quantity: 5,
+                referenceDoc: 'SO-20260320-001',
+                date: '2026-03-20',
+                remark: '销售出库'
+            }
+        ],
+        qualityInspections: [
+            {
+                id: 'qi1',
+                type: 'IQC',
+                sourceType: 'material',
+                sourceId: 'm1',
+                result: 'pass',
+                quantity: 50,
+                qualifiedQty: 48,
+                defectiveQty: 2,
+                inspector: '质检员A',
+                date: '2026-03-01'
+            },
+            {
+                id: 'qi2',
+                type: 'OQC',
+                sourceType: 'product',
+                sourceId: 'p1',
+                result: 'pass',
+                quantity: 10,
+                qualifiedQty: 10,
+                defectiveQty: 0,
+                inspector: '质检员B',
+                date: '2026-03-15'
+            }
+        ],
+        financialRecords: [
+            {
+                id: 'fr1',
+                type: 'AP',
+                sourceType: 'purchase_order',
+                sourceId: 'po1',
+                amount: 5000,
+                paidAmount: 3000,
+                status: 'partial',
+                date: '2026-03-01'
+            },
+            {
+                id: 'fr2',
+                type: 'AR',
+                sourceType: 'order',
+                sourceId: 'o1',
+                amount: 12000,
+                paidAmount: 12000,
+                status: 'paid',
+                date: '2026-03-20'
+            }
+        ]
     };
     
     saveData(sampleData);

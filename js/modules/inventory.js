@@ -23,6 +23,9 @@ export default {
                     <a class="nav-link" :class="{ active: activeTab === 'products' }" @click="activeTab = 'products'">产品库存</a>
                 </li>
                 <li class="nav-item">
+                    <a class="nav-link" :class="{ active: activeTab === 'transactions' }" @click="activeTab = 'transactions'">库存流水</a>
+                </li>
+                <li class="nav-item">
                     <a class="nav-link" :class="{ active: activeTab === 'analysis' }" @click="activeTab = 'analysis'">库存分析</a>
                 </li>
             </ul>
@@ -92,6 +95,73 @@ export default {
                                 <td>
                                     <button class="btn btn-sm btn-outline-primary" @click="openInventoryAdjustModal('product', item)">调整</button>
                                 </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- 库存流水 -->
+            <div v-if="activeTab === 'transactions'">
+                <h5 class="mb-3">库存流水记录</h5>
+                <div class="card mb-4">
+                    <div class="card-body">
+                        <div class="row g-3">
+                            <div class="col-md-3">
+                                <label class="form-label">类型</label>
+                                <select class="form-select" v-model="filterType">
+                                    <option value="">全部</option>
+                                    <option value="purchase_in">采购入库</option>
+                                    <option value="production_in">生产入库</option>
+                                    <option value="sale_out">销售出库</option>
+                                    <option value="material_out">物料出库</option>
+                                    <option value="adjust">调整</option>
+                                </select>
+                            </div>
+                            <div class="col-md-3">
+                                <label class="form-label">开始日期</label>
+                                <input type="date" class="form-control" v-model="filterStartDate">
+                            </div>
+                            <div class="col-md-3">
+                                <label class="form-label">结束日期</label>
+                                <input type="date" class="form-control" v-model="filterEndDate">
+                            </div>
+                            <div class="col-md-3">
+                                <label class="form-label">物料/产品</label>
+                                <select class="form-select" v-model="filterItemType">
+                                    <option value="">全部</option>
+                                    <option value="material">物料</option>
+                                    <option value="product">产品</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="table-responsive">
+                    <table class="table table-hover">
+                        <thead class="table-light">
+                            <tr>
+                                <th>流水号</th>
+                                <th>类型</th>
+                                <th>业务来源</th>
+                                <th>物料/产品</th>
+                                <th>数量</th>
+                                <th>日期</th>
+                                <th>备注</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr v-for="tx in filteredTransactions" :key="tx.id">
+                                <td>{{ tx.id }}</td>
+                                <td><span class="badge" :class="getTypeBadgeClass(tx.type)">{{ getTypeName(tx.type) }}</span></td>
+                                <td>{{ tx.source || '-' }}</td>
+                                <td>{{ getItemName(tx) }}</td>
+                                <td :class="tx.quantity > 0 ? 'text-success' : 'text-danger'">{{ formatQuantity(tx.quantity) }}</td>
+                                <td>{{ formatDate(tx.date) }}</td>
+                                <td>{{ tx.remark || '-' }}</td>
+                            </tr>
+                            <tr v-if="filteredTransactions.length === 0">
+                                <td colspan="7" class="text-center text-muted">暂无数据</td>
                             </tr>
                         </tbody>
                     </table>
@@ -200,7 +270,11 @@ export default {
             adjustItemId: '',
             adjustQuantity: 1,
             adjustMethod: 'add',
-            adjustingItem: null
+            adjustingItem: null,
+            filterType: '',
+            filterStartDate: '',
+            filterEndDate: '',
+            filterItemType: ''
         };
     },
     mounted() {
@@ -330,6 +404,35 @@ export default {
                 description: '当前库存水平和周转率处于合理范围',
                 type: '状态'
             }];
+        },
+
+        /**
+         * 过滤后的库存流水记录
+         * @returns {Array} 过滤后的流水记录
+         */
+        filteredTransactions() {
+            let transactions = this.data.inventoryTransactions || [];
+            
+            if (this.filterType) {
+                transactions = transactions.filter(tx => tx.type === this.filterType);
+            }
+            
+            if (this.filterStartDate) {
+                const startDate = new Date(this.filterStartDate);
+                transactions = transactions.filter(tx => new Date(tx.date) >= startDate);
+            }
+            
+            if (this.filterEndDate) {
+                const endDate = new Date(this.filterEndDate);
+                endDate.setHours(23, 59, 59, 999);
+                transactions = transactions.filter(tx => new Date(tx.date) <= endDate);
+            }
+            
+            if (this.filterItemType) {
+                transactions = transactions.filter(tx => tx.itemType === this.filterItemType);
+            }
+            
+            return transactions.sort((a, b) => new Date(b.date) - new Date(a.date));
         }
     },
     methods: {
@@ -486,6 +589,74 @@ export default {
                     }
                 ]
             });
+        },
+
+        /**
+         * 获取类型显示名称
+         * @param {string} type - 流水类型
+         * @returns {string} 类型中文名称
+         */
+        getTypeName(type) {
+            const typeMap = {
+                'purchase_in': '采购入库',
+                'production_in': '生产入库',
+                'sale_out': '销售出库',
+                'material_out': '物料出库',
+                'adjust': '调整'
+            };
+            return typeMap[type] || type;
+        },
+
+        /**
+         * 获取类型对应的Badge样式类
+         * @param {string} type - 流水类型
+         * @returns {string} Bootstrap Badge类名
+         */
+        getTypeBadgeClass(type) {
+            const classMap = {
+                'purchase_in': 'bg-success',
+                'production_in': 'bg-info',
+                'sale_out': 'bg-primary',
+                'material_out': 'bg-warning',
+                'adjust': 'bg-secondary'
+            };
+            return classMap[type] || 'bg-secondary';
+        },
+
+        /**
+         * 格式化数量显示
+         * @param {number} quantity - 数量
+         * @returns {string} 格式化后的数量字符串
+         */
+        formatQuantity(quantity) {
+            return quantity > 0 ? `+${quantity}` : `${quantity}`;
+        },
+
+        /**
+         * 格式化日期显示
+         * @param {string} dateStr - 日期字符串
+         * @returns {string} 格式化后的日期
+         */
+        formatDate(dateStr) {
+            if (!dateStr) return '-';
+            const date = new Date(dateStr);
+            return date.toLocaleDateString('zh-CN');
+        },
+
+        /**
+         * 获取流水关联的物料/产品名称
+         * @param {Object} tx - 流水记录
+         * @returns {string} 物料或产品名称
+         */
+        getItemName(tx) {
+            if (tx.itemType === 'material') {
+                const material = this.getMaterial(tx.itemId);
+                return material ? `${material.code} - ${material.name}` : tx.itemId;
+            } else if (tx.itemType === 'product') {
+                const product = this.getProduct(tx.itemId);
+                return product ? `${product.code} - ${product.name}` : tx.itemId;
+            }
+            return '-';
         }
     },
 

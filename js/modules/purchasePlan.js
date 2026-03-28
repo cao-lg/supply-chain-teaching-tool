@@ -99,6 +99,7 @@ export default {
                                 <td>
                                     <button class="btn btn-sm btn-outline-primary" @click="openPurchaseOrderModal(item)">编辑</button>
                                     <button class="btn btn-sm btn-outline-danger" @click="deletePurchaseOrder(item.id)">删除</button>
+                                    <button v-if="item.status === '进行中'" class="btn btn-sm btn-success" @click="openStockInModal(item)">入库</button>
                                 </td>
                             </tr>
                         </tbody>
@@ -175,6 +176,52 @@ export default {
                     </div>
                 </div>
             </div>
+
+            <!-- 入库模态框 -->
+            <div class="modal fade" id="stockInModal" tabindex="-1" ref="stockInModal">
+                <div class="modal-dialog">
+                    <div class="modal-content">
+                        <div class="modal-header">
+                            <h5 class="modal-title">采购入库</h5>
+                            <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                        </div>
+                        <div class="modal-body">
+                            <form @submit.prevent="confirmStockIn">
+                                <div class="mb-3">
+                                    <label class="form-label">订单编号</label>
+                                    <input type="text" class="form-control" :value="stockInOrder?.orderNo" disabled>
+                                </div>
+                                <div class="mb-3">
+                                    <label class="form-label">入库物料清单</label>
+                                    <div v-for="(item, index) in stockInOrder?.items" :key="index" class="card mb-2">
+                                        <div class="card-body">
+                                            <div class="row">
+                                                <div class="col-6">
+                                                    <strong>{{ getMaterial(item.materialId)?.name }}</strong>
+                                                    <small class="text-muted d-block">订单数量: {{ item.quantity }}</small>
+                                                </div>
+                                                <div class="col-6">
+                                                    <label class="form-label">入库数量</label>
+                                                    <input type="number" class="form-control" v-model="stockInQuantities[index]" 
+                                                           :max="item.quantity" min="0" required>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="mb-3 form-check">
+                                    <input type="checkbox" class="form-check-input" id="requireIQCCheck" v-model="requireIQC">
+                                    <label class="form-check-label" for="requireIQCCheck">需要IQC检验</label>
+                                </div>
+                                <div class="text-end">
+                                    <button type="button" class="btn btn-secondary me-2" data-bs-dismiss="modal">取消</button>
+                                    <button type="submit" class="btn btn-primary">确认入库</button>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+            </div>
         </div>
     `,
     data() {
@@ -182,7 +229,10 @@ export default {
             activeTab: 'requirements',
             data: loadData(),
             purchaseRequirements: [],
-            editingPurchaseOrder: {}
+            editingPurchaseOrder: {},
+            stockInOrder: null,
+            stockInQuantities: [],
+            requireIQC: false
         };
     },
     mounted() {
@@ -344,6 +394,97 @@ export default {
                 this.data.purchaseOrders = this.data.purchaseOrders.filter(o => o.id !== id);
                 saveData(this.data);
             }
+        },
+
+        /**
+         * 打开入库模态框
+         * @param {Object} order - 采购订单对象
+         */
+        openStockInModal(order) {
+            this.stockInOrder = order;
+            this.stockInQuantities = order.items.map(item => item.quantity);
+            this.requireIQC = false;
+            new bootstrap.Modal(this.$refs.stockInModal).show();
+        },
+
+        /**
+         * 确认入库
+         */
+        confirmStockIn() {
+            if (!this.stockInOrder) return;
+
+            const totalStockInQty = this.stockInQuantities.reduce((sum, qty) => sum + qty, 0);
+            if (totalStockInQty <= 0) {
+                alert('入库数量必须大于0');
+                return;
+            }
+
+            if (this.requireIQC) {
+                this.createIQCInspection();
+            }
+
+            this.stockInOrder.items.forEach((item, index) => {
+                const stockInQty = this.stockInQuantities[index];
+                if (stockInQty > 0) {
+                    let inventoryItem = this.data.inventory.materials.find(i => i.materialId === item.materialId);
+                    if (!inventoryItem) {
+                        inventoryItem = { materialId: item.materialId, quantity: 0, safeStock: 0 };
+                        this.data.inventory.materials.push(inventoryItem);
+                    }
+                    inventoryItem.quantity += stockInQty;
+
+                    const transaction = {
+                        id: generateId(),
+                        type: 'purchase_in',
+                        materialId: item.materialId,
+                        productId: null,
+                        quantity: stockInQty,
+                        referenceDoc: this.stockInOrder.orderNo,
+                        date: new Date().toISOString().split('T')[0],
+                        remark: `采购入库-${this.getMaterial(item.materialId)?.name}`
+                    };
+                    this.data.inventoryTransactions.push(transaction);
+                }
+            });
+
+            const allItemsFullyStocked = this.stockInOrder.items.every((item, index) => 
+                this.stockInQuantities[index] >= item.quantity
+            );
+            if (allItemsFullyStocked) {
+                const orderIndex = this.data.purchaseOrders.findIndex(o => o.id === this.stockInOrder.id);
+                if (orderIndex !== -1) {
+                    this.data.purchaseOrders[orderIndex].status = '已完成';
+                }
+            }
+
+            saveData(this.data);
+            window.dispatchEvent(new CustomEvent('data-updated'));
+            bootstrap.Modal.getInstance(this.$refs.stockInModal).hide();
+        },
+
+        /**
+         * 创建IQC检验单
+         */
+        createIQCInspection() {
+            this.stockInOrder.items.forEach((item, index) => {
+                const stockInQty = this.stockInQuantities[index];
+                if (stockInQty > 0) {
+                    const inspection = {
+                        id: generateId(),
+                        type: 'IQC',
+                        sourceType: 'material',
+                        sourceId: item.materialId,
+                        result: 'pending',
+                        quantity: stockInQty,
+                        qualifiedQty: 0,
+                        defectiveQty: 0,
+                        inspector: '',
+                        date: new Date().toISOString().split('T')[0],
+                        remark: `采购订单检验-${this.stockInOrder.orderNo}`
+                    };
+                    this.data.qualityInspections.push(inspection);
+                }
+            });
         },
 
         /**

@@ -13,6 +13,7 @@ import DemandForecastModule from './modules/demandForecast.js';
 import LogisticsModule from './modules/logistics.js';
 import CustomerServiceModule from './modules/customerService.js';
 import DataAnalysisModule from './modules/dataAnalysis.js';
+import FinanceModule from './modules/finance.js';
 
 const { createApp, ref, onMounted, watch } = Vue;
 
@@ -22,7 +23,7 @@ const { createApp, ref, onMounted, watch } = Vue;
 const app = createApp({
     setup() {
         const currentPage = ref(0);
-        const navItems = ['首页', '基础资料', '生产计划', '采购计划', '库存管理', '生产能力', '需求预测', '物流配送', '客户服务', '数据分析', '数据管理']
+        const navItems = ['首页', '基础资料', '生产计划', '采购计划', '库存管理', '生产能力', '需求预测', '物流配送', '客户服务', '质量检验', '数据分析', '财务管理', '数据管理']
         let chart1 = null;
         let chart2 = null;
         let chart3 = null;
@@ -189,5 +190,7 @@ app.component('demand-forecast-module', DemandForecastModule);
 app.component('logistics-module', LogisticsModule);
 app.component('customer-service-module', CustomerServiceModule);
 app.component('data-analysis-module', DataAnalysisModule);
+app.component('quality-control-module', QualityControlModule);
+app.component('finance-module', FinanceModule);
 
 app.mount('#app');

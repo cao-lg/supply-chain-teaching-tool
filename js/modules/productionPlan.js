@@ -103,6 +103,7 @@ export default {
                                 </td>
                                 <td>
                                     <button class="btn btn-sm btn-outline-primary" @click="openPlanModal(item)">编辑</button>
+                                    <button class="btn btn-sm btn-success" @click="openCompletionModal(item)" v-if="item.status === '进行中'">完工入库</button>
                                     <button class="btn btn-sm btn-outline-danger" @click="deletePlan(item.id)">删除</button>
                                 </td>
                             </tr>
@@ -217,6 +218,43 @@ export default {
                     </div>
                 </div>
             </div>
+
+            <!-- 生产完工入库模态框 -->
+            <div class="modal fade" id="completionModal" tabindex="-1" ref="completionModal">
+                <div class="modal-dialog">
+                    <div class="modal-content">
+                        <div class="modal-header">
+                            <h5 class="modal-title">生产完工入库</h5>
+                            <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                        </div>
+                        <div class="modal-body">
+                            <div class="mb-3">
+                                <label class="form-label">工单编号</label>
+                                <input type="text" class="form-control" :value="completionPlan?.id" readonly>
+                            </div>
+                            <div class="mb-3">
+                                <label class="form-label">产品</label>
+                                <input type="text" class="form-control" :value="getProductName(completionPlan?.productId)" readonly>
+                            </div>
+                            <div class="mb-3">
+                                <label class="form-label">计划数量</label>
+                                <input type="number" class="form-control" :value="completionPlan?.quantity" readonly>
+                            </div>
+                            <div class="mb-3">
+                                <label class="form-label">入库数量</label>
+                                <input type="number" class="form-control" v-model.number="completionQuantity" min="1" required>
+                            </div>
+                            <div class="alert alert-info" v-if="bomNotFound">
+                                <strong>提示：</strong>未找到该产品的BOM清单，将直接增加产品库存而不扣减物料。
+                            </div>
+                            <div class="text-end">
+                                <button type="button" class="btn btn-secondary me-2" data-bs-dismiss="modal">取消</button>
+                                <button type="button" class="btn btn-primary" @click="confirmProductionCompletion">确认入库</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
         </div>
     `,
     data() {
@@ -224,7 +262,10 @@ export default {
             activeTab: 'orders',
             data: loadData(),
             editingOrder: {},
-            editingPlan: {}
+            editingPlan: {},
+            completionPlan: null,
+            completionQuantity: 0,
+            bomNotFound: false
         };
     },
     mounted() {
@@ -584,6 +625,99 @@ export default {
                     .reduce((total, equipment) => total + equipment.capacityPerDay, 0);
             }
             return 0;
+        },
+
+        /**
+         * 打开生产完工入库模态框
+         * @param {Object} plan - 生产计划对象
+         */
+        openCompletionModal(plan) {
+            this.completionPlan = { ...plan };
+            this.completionQuantity = plan.quantity;
+            this.bomNotFound = false;
+            const bom = this.data.boms?.find(b => b.productId === plan.productId);
+            if (!bom) {
+                this.bomNotFound = true;
+            }
+            new bootstrap.Modal(this.$refs.completionModal).show();
+        },
+
+        /**
+         * 确认生产完工入库
+         */
+        confirmProductionCompletion() {
+            if (!this.completionPlan || !this.completionQuantity || this.completionQuantity <= 0) {
+                alert('请输入有效的入库数量');
+                return;
+            }
+
+            const plan = this.completionPlan;
+            const quantity = this.completionQuantity;
+            const now = new Date().toISOString();
+
+            const bom = this.data.boms?.find(b => b.productId === plan.productId);
+            this.bomNotFound = !bom;
+
+            if (bom && bom.items) {
+                bom.items.forEach(bomItem => {
+                    const material = this.data.inventory.materials.find(m => m.materialId === bomItem.materialId);
+                    if (material) {
+                        material.quantity -= bomItem.quantity * quantity;
+                        if (material.quantity < 0) material.quantity = 0;
+                    }
+                });
+            }
+
+            let product = this.data.inventory.products.find(p => p.productId === plan.productId);
+            if (product) {
+                product.quantity += quantity;
+            } else {
+                this.data.inventory.products.push({
+                    productId: plan.productId,
+                    quantity: quantity
+                });
+            }
+
+            const planIndex = this.data.productionPlans.findIndex(p => p.id === plan.id);
+            if (planIndex !== -1) {
+                this.data.productionPlans[planIndex].status = '已完成';
+            }
+
+            const materialFlows = [];
+            if (bom && bom.items) {
+                bom.items.forEach(bomItem => {
+                    const material = this.data.materials?.find(m => m.id === bomItem.materialId);
+                    materialFlows.push({
+                        id: generateId(),
+                        type: 'material_out',
+                        materialId: bomItem.materialId,
+                        materialName: material?.name || '未知物料',
+                        quantity: bomItem.quantity * quantity,
+                        date: now,
+                        relatedPlanId: plan.id
+                    });
+                });
+            }
+
+            const productFlow = {
+                id: generateId(),
+                type: 'production_in',
+                productId: plan.productId,
+                productName: this.getProductName(plan.productId),
+                quantity: quantity,
+                date: now,
+                relatedPlanId: plan.id
+            };
+
+            if (!this.data.inventoryFlows) {
+                this.data.inventoryFlows = [];
+            }
+            this.data.inventoryFlows.push(...materialFlows, productFlow);
+
+            saveData(this.data);
+            bootstrap.Modal.getInstance(this.$refs.completionModal).hide();
+            alert('入库成功！');
+            this.refreshData();
         }
     }
 };

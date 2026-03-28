@@ -3,7 +3,7 @@
  * 包含供应链绩效、成本分析、风险评估、决策支持功能
  */
 
-import { loadData, saveData } from '../store.js';
+import { loadData, saveData, generateId } from '../store.js';
 
 /**
  * 数据分析组件
@@ -1053,6 +1053,100 @@ export default {
                     }
                 ]
             });
+        },
+
+        /**
+         * 确认订单并扣减库存
+         * @param {Object} order - 订单对象
+         * @returns {Object} 结果对象 { success: boolean, message: string }
+         */
+        confirmOrder(order) {
+            const productId = order.productId;
+            const quantity = order.quantity || 1;
+            const inventoryProducts = this.data.inventory?.products || [];
+            const productIndex = inventoryProducts.findIndex(p => p.productId === productId);
+
+            if (productIndex === -1) {
+                return { success: false, message: '产品库存记录不存在' };
+            }
+
+            const productInventory = inventoryProducts[productIndex];
+
+            if (productInventory.quantity < quantity) {
+                return { 
+                    success: false, 
+                    message: `库存不足，无法确认订单。当前库存: ${productInventory.quantity}，订单数量: ${quantity}` 
+                };
+            }
+
+            productInventory.quantity -= quantity;
+
+            if (!this.data.inventoryTransactions) {
+                this.data.inventoryTransactions = [];
+            }
+
+            const transaction = {
+                id: generateId(),
+                type: 'sale_out',
+                productId: productId,
+                quantity: -quantity,
+                referenceDoc: order.orderNo,
+                date: new Date().toISOString().split('T')[0],
+                remark: '销售出库'
+            };
+            this.data.inventoryTransactions.push(transaction);
+
+            order.status = '已完成';
+
+            saveData(this.data);
+
+            return { success: true, message: '订单已确认，库存已扣减' };
+        },
+
+        /**
+         * 检查并扣减库存（库存充足时扣减并生成流水）
+         * @param {string} productId - 产品ID
+         * @param {number} quantity - 扣减数量
+         * @param {string} orderNo - 订单编号（用于流水记录）
+         * @returns {Object} 结果对象 { success: boolean, message: string }
+         */
+        checkAndDeductInventory(productId, quantity, orderNo) {
+            const inventoryProducts = this.data.inventory?.products || [];
+            const productIndex = inventoryProducts.findIndex(p => p.productId === productId);
+
+            if (productIndex === -1) {
+                return { success: false, message: '产品库存记录不存在' };
+            }
+
+            const productInventory = inventoryProducts[productIndex];
+
+            if (productInventory.quantity < quantity) {
+                return { 
+                    success: false, 
+                    message: '库存不足，无法确认订单',
+                    availableQuantity: productInventory.quantity
+                };
+            }
+
+            productInventory.quantity -= quantity;
+
+            if (!this.data.inventoryTransactions) {
+                this.data.inventoryTransactions = [];
+            }
+
+            this.data.inventoryTransactions.push({
+                id: generateId(),
+                type: 'sale_out',
+                productId: productId,
+                quantity: -quantity,
+                referenceDoc: orderNo,
+                date: new Date().toISOString().split('T')[0],
+                remark: '销售出库'
+            });
+
+            saveData(this.data);
+
+            return { success: true, message: '库存扣减成功' };
         }
     },
     watch: {
