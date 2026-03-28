@@ -5,8 +5,18 @@ pages:
   script:
     - mkdir -p public
     - cp index.html public/
+    - cp -r css public/
+    - cp -r js public/
+    - echo "Deployment completed successfully!"
   artifacts:
     paths:
       - public
+    expire_in: 1 week
   only:
     - master
+    - main
+  tags:
+    - gitlab-org
+  environment:
+    name: production
+    url: https://$CI_PROJECT_NAMESPACE.$CI_PAGES_DOMAIN/$CI_PROJECT_NAME

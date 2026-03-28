@@ -1,0 +1,71 @@
+/**
+ * 供应链管理教学工具 - 全局样式
+ */
+
+body {
+    font-family: system-ui, 'Segoe UI', 'Roboto', 'Noto Sans', sans-serif;
+    background-color: #f8f9fa;
+}
+
+.main-content {
+    padding-top: 20px;
+    min-height: calc(100vh - 76px);
+}
+
+.chart-container {
+    height: 400px;
+    width: 100%;
+}
+
+.nav-link {
+    cursor: pointer;
+}
+
+.nav-link.active {
+    color: #0d6efd !important;
+    font-weight: 600;
+}
+
+.card {
+    margin-bottom: 20px;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+.table th {
+    font-weight: 600;
+}
+
+.btn-sm {
+    margin-right: 5px;
+}
+
+.modal-header {
+    background-color: #f8f9fa;
+}
+
+.form-label {
+    font-weight: 500;
+}
+
+.badge {
+    font-size: 0.85em;
+}
+
+.text-muted {
+    color: #6c757d !important;
+}
+
+.alert {
+    margin-bottom: 20px;
+}
+
+/* 响应式调整 */
+@media (max-width: 768px) {
+    .chart-container {
+        height: 300px;
+    }
+    
+    .main-content {
+        padding: 10px;
+    }
+}
