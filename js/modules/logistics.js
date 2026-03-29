@@ -190,43 +190,67 @@ export default {
                             <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
                         </div>
                         <div class="modal-body">
-                            <form @submit.prevent="saveTransport">
-                                <div class="mb-3">
-                                    <label class="form-label">运输方式</label>
-                                    <select class="form-select" v-model="editingTransport.name" required>
-                                        <option value="快递">快递</option>
-                                        <option value="陆运">陆运</option>
-                                        <option value="空运">空运</option>
-                                        <option value="海运">海运</option>
-                                        <option value="铁路">铁路</option>
-                                    </select>
+                            <form @submit.prevent="saveTransport" class="form-compact">
+                                <div class="row mb-2">
+                                    <div class="col-sm-3">
+                                        <label class="form-label">运输方式 *</label>
+                                    </div>
+                                    <div class="col-sm-9">
+                                        <select class="form-select" v-model="editingTransport.name" required>
+                                            <option value="快递">快递</option>
+                                            <option value="陆运">陆运</option>
+                                            <option value="空运">空运</option>
+                                            <option value="海运">海运</option>
+                                            <option value="铁路">铁路</option>
+                                        </select>
+                                    </div>
                                 </div>
-                                <div class="mb-3">
-                                    <label class="form-label">承运商</label>
-                                    <input type="text" class="form-control" v-model="editingTransport.carrier" required>
+                                <div class="row mb-2">
+                                    <div class="col-sm-3">
+                                        <label class="form-label">承运商 *</label>
+                                    </div>
+                                    <div class="col-sm-9">
+                                        <input type="text" class="form-control" v-model="editingTransport.carrier" required>
+                                    </div>
                                 </div>
-                                <div class="mb-3">
-                                    <label class="form-label">运费单价(元/kg)</label>
-                                    <input type="number" class="form-control" v-model="editingTransport.price" required min="0" step="0.01">
+                                <div class="row mb-2">
+                                    <div class="col-sm-3">
+                                        <label class="form-label">运费单价 *</label>
+                                    </div>
+                                    <div class="col-sm-9">
+                                        <input type="number" class="form-control" v-model="editingTransport.price" required min="0" step="0.01">
+                                    </div>
                                 </div>
-                                <div class="mb-3">
-                                    <label class="form-label">运输时效(天)</label>
-                                    <input type="number" class="form-control" v-model="editingTransport.transitTime" required min="1">
+                                <div class="row mb-2">
+                                    <div class="col-sm-3">
+                                        <label class="form-label">运输时效 *</label>
+                                    </div>
+                                    <div class="col-sm-9">
+                                        <input type="number" class="form-control" v-model="editingTransport.transitTime" required min="1">
+                                    </div>
                                 </div>
-                                <div class="mb-3">
-                                    <label class="form-label">覆盖范围</label>
-                                    <input type="text" class="form-control" v-model="editingTransport.coverage" placeholder="如：全国、华南地区等">
+                                <div class="row mb-2">
+                                    <div class="col-sm-3">
+                                        <label class="form-label">覆盖范围</label>
+                                    </div>
+                                    <div class="col-sm-9">
+                                        <input type="text" class="form-control" v-model="editingTransport.coverage" placeholder="如：全国、华南地区等">
+                                    </div>
                                 </div>
-                                <div class="mb-3">
-                                    <label class="form-label">状态</label>
-                                    <select class="form-select" v-model="editingTransport.status">
-                                        <option value="可用">可用</option>
-                                        <option value="暂停">暂停</option>
-                                    </select>
+                                <div class="row mb-2">
+                                    <div class="col-sm-3">
+                                        <label class="form-label">状态</label>
+                                    </div>
+                                    <div class="col-sm-9">
+                                        <select class="form-select" v-model="editingTransport.status">
+                                            <option value="可用">可用</option>
+                                            <option value="暂停">暂停</option>
+                                        </select>
+                                    </div>
                                 </div>
-                                <div class="text-end">
-                                    <button type="button" class="btn btn-secondary me-2" data-bs-dismiss="modal">取消</button>
-                                    <button type="submit" class="btn btn-primary">保存</button>
+                                <div class="text-end mt-3">
+                                    <button type="button" class="btn btn-sm btn-outline-secondary me-2" data-bs-dismiss="modal">取消</button>
+                                    <button type="submit" class="btn btn-sm btn-primary">保存</button>
                                 </div>
                             </form>
                         </div>
@@ -243,50 +267,82 @@ export default {
                             <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
                         </div>
                         <div class="modal-body">
-                            <form @submit.prevent="saveDelivery">
-                                <div class="mb-3">
-                                    <label class="form-label">计划编号</label>
-                                    <input type="text" class="form-control" v-model="editingDelivery.planNo" required>
+                            <form @submit.prevent="saveDelivery" class="form-compact">
+                                <div class="row mb-2">
+                                    <div class="col-sm-3">
+                                        <label class="form-label">计划编号 *</label>
+                                    </div>
+                                    <div class="col-sm-9">
+                                        <input type="text" class="form-control" v-model="editingDelivery.planNo" required>
+                                    </div>
                                 </div>
-                                <div class="mb-3">
-                                    <label class="form-label">关联订单</label>
-                                    <select class="form-select" v-model="editingDelivery.orderId" required>
-                                        <option v-for="order in data.orders" :key="order.id" :value="order.id">
-                                            {{ order.orderNo }} - {{ getProductName(order.productId) }}
-                                        </option>
-                                    </select>
+                                <div class="row mb-2">
+                                    <div class="col-sm-3">
+                                        <label class="form-label">关联订单 *</label>
+                                    </div>
+                                    <div class="col-sm-9">
+                                        <select class="form-select" v-model="editingDelivery.orderId" required>
+                                            <option v-for="order in data.orders" :key="order.id" :value="order.id">
+                                                {{ order.orderNo }} - {{ getProductName(order.productId) }}
+                                            </option>
+                                        </select>
+                                    </div>
                                 </div>
-                                <div class="mb-3">
-                                    <label class="form-label">收货地址</label>
-                                    <textarea class="form-control" v-model="editingDelivery.address" rows="2" required></textarea>
+                                <div class="row mb-2">
+                                    <div class="col-sm-3">
+                                        <label class="form-label">收货地址 *</label>
+                                    </div>
+                                    <div class="col-sm-9">
+                                        <textarea class="form-control" v-model="editingDelivery.address" rows="2" required></textarea>
+                                    </div>
                                 </div>
-                                <div class="mb-3">
-                                    <label class="form-label">运输方式</label>
-                                    <select class="form-select" v-model="editingDelivery.transportId" required>
-                                        <option v-for="transport in data.transportMethods || []" :key="transport.id" :value="transport.id">
-                                            {{ transport.name }} - {{ transport.carrier }}
-                                        </option>
-                                    </select>
+                                <div class="row mb-2">
+                                    <div class="col-sm-3">
+                                        <label class="form-label">运输方式 *</label>
+                                    </div>
+                                    <div class="col-sm-9">
+                                        <select class="form-select" v-model="editingDelivery.transportId" required>
+                                            <option v-for="transport in data.transportMethods || []" :key="transport.id" :value="transport.id">
+                                                {{ transport.name }} - {{ transport.carrier }}
+                                            </option>
+                                        </select>
+                                    </div>
                                 </div>
-                                <div class="mb-3">
-                                    <label class="form-label">预计发货日期</label>
-                                    <input type="date" class="form-control" v-model="editingDelivery.shipDate" required>
+                                <div class="row mb-2">
+                                    <div class="col-sm-3">
+                                        <label class="form-label">预计发货 *</label>
+                                    </div>
+                                    <div class="col-sm-9">
+                                        <input type="date" class="form-control" v-model="editingDelivery.shipDate" required>
+                                    </div>
                                 </div>
-                                <div class="mb-3">
-                                    <label class="form-label">预计到达日期</label>
-                                    <input type="date" class="form-control" v-model="editingDelivery.arrivalDate" required>
+                                <div class="row mb-2">
+                                    <div class="col-sm-3">
+                                        <label class="form-label">预计到达 *</label>
+                                    </div>
+                                    <div class="col-sm-9">
+                                        <input type="date" class="form-control" v-model="editingDelivery.arrivalDate" required>
+                                    </div>
                                 </div>
-                                <div class="mb-3">
-                                    <label class="form-label">运单号</label>
-                                    <input type="text" class="form-control" v-model="editingDelivery.trackingNo" placeholder="选填">
+                                <div class="row mb-2">
+                                    <div class="col-sm-3">
+                                        <label class="form-label">运单号</label>
+                                    </div>
+                                    <div class="col-sm-9">
+                                        <input type="text" class="form-control" v-model="editingDelivery.trackingNo" placeholder="选填">
+                                    </div>
                                 </div>
-                                <div class="mb-3">
-                                    <label class="form-label">备注</label>
-                                    <textarea class="form-control" v-model="editingDelivery.remark" rows="2"></textarea>
+                                <div class="row mb-2">
+                                    <div class="col-sm-3">
+                                        <label class="form-label">备注</label>
+                                    </div>
+                                    <div class="col-sm-9">
+                                        <textarea class="form-control" v-model="editingDelivery.remark" rows="2"></textarea>
+                                    </div>
                                 </div>
-                                <div class="text-end">
-                                    <button type="button" class="btn btn-secondary me-2" data-bs-dismiss="modal">取消</button>
-                                    <button type="submit" class="btn btn-primary">保存</button>
+                                <div class="text-end mt-3">
+                                    <button type="button" class="btn btn-sm btn-outline-secondary me-2" data-bs-dismiss="modal">取消</button>
+                                    <button type="submit" class="btn btn-sm btn-primary">保存</button>
                                 </div>
                             </form>
                         </div>

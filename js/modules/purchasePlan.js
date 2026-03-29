@@ -128,60 +128,84 @@ export default {
                             <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
                         </div>
                         <div class="modal-body">
-                            <form @submit.prevent="savePurchaseOrder">
-                                <div class="mb-3">
-                                    <label class="form-label">订单编号</label>
-                                    <input type="text" class="form-control" v-model="editingPurchaseOrder.orderNo" required>
-                                </div>
-                                <div class="mb-3">
-                                    <label class="form-label">供应商</label>
-                                    <select class="form-select" v-model="editingPurchaseOrder.supplierId" required>
-                                        <option v-for="supplier in data.suppliers" :key="supplier.id" :value="supplier.id">
-                                            {{ supplier.name }}
-                                        </option>
-                                    </select>
-                                </div>
-                                <div class="mb-3">
-                                    <label class="form-label">物料清单</label>
-                                    <div v-for="(item, index) in editingPurchaseOrder.items" :key="index" class="row mb-2">
-                                        <div class="col-4">
-                                            <select class="form-select" v-model="item.materialId" required>
-                                                <option v-for="material in data.materials" :key="material.id" :value="material.id">
-                                                    {{ material.name }}
-                                                </option>
-                                            </select>
-                                        </div>
-                                        <div class="col-3">
-                                            <input type="number" class="form-control" v-model="item.quantity" placeholder="数量" required min="1">
-                                        </div>
-                                        <div class="col-3">
-                                            <input type="number" class="form-control" v-model="item.price" placeholder="单价" required min="0" step="0.01">
-                                        </div>
-                                        <div class="col-2">
-                                            <button type="button" class="btn btn-outline-danger" @click="removePurchaseItem(index)">删除</button>
-                                        </div>
+                            <form @submit.prevent="savePurchaseOrder" class="form-compact">
+                                <div class="row mb-2">
+                                    <div class="col-sm-3">
+                                        <label class="form-label">订单编号 *</label>
                                     </div>
-                                    <button type="button" class="btn btn-outline-primary" @click="addPurchaseItem">添加物料</button>
+                                    <div class="col-sm-9">
+                                        <input type="text" class="form-control" v-model="editingPurchaseOrder.orderNo" required>
+                                    </div>
                                 </div>
-                                <div class="mb-3">
-                                    <label class="form-label">订单日期</label>
-                                    <input type="date" class="form-control" v-model="editingPurchaseOrder.orderDate" required>
+                                <div class="row mb-2">
+                                    <div class="col-sm-3">
+                                        <label class="form-label">供应商 *</label>
+                                    </div>
+                                    <div class="col-sm-9">
+                                        <select class="form-select" v-model="editingPurchaseOrder.supplierId" required>
+                                            <option v-for="supplier in data.suppliers" :key="supplier.id" :value="supplier.id">
+                                                {{ supplier.name }}
+                                            </option>
+                                        </select>
+                                    </div>
                                 </div>
-                                <div class="mb-3">
-                                    <label class="form-label">预计到货日期</label>
-                                    <input type="date" class="form-control" v-model="editingPurchaseOrder.expectedDate" required>
+                                <div class="row mb-2">
+                                    <div class="col-sm-3">
+                                        <label class="form-label">物料清单</label>
+                                    </div>
+                                    <div class="col-sm-9">
+                                        <div v-for="(item, index) in editingPurchaseOrder.items" :key="index" class="row mb-2">
+                                            <div class="col-4">
+                                                <select class="form-select" v-model="item.materialId" required>
+                                                    <option v-for="material in data.materials" :key="material.id" :value="material.id">
+                                                        {{ material.name }}
+                                                    </option>
+                                                </select>
+                                            </div>
+                                            <div class="col-3">
+                                                <input type="number" class="form-control" v-model="item.quantity" placeholder="数量" required min="1">
+                                            </div>
+                                            <div class="col-3">
+                                                <input type="number" class="form-control" v-model="item.price" placeholder="单价" required min="0" step="0.01">
+                                            </div>
+                                            <div class="col-2">
+                                                <button type="button" class="btn btn-sm btn-outline-danger" @click="removePurchaseItem(index)">删除</button>
+                                            </div>
+                                        </div>
+                                        <button type="button" class="btn btn-sm btn-outline-primary" @click="addPurchaseItem">添加物料</button>
+                                    </div>
                                 </div>
-                                <div class="mb-3">
-                                    <label class="form-label">状态</label>
-                                    <select class="form-select" v-model="editingPurchaseOrder.status">
-                                        <option value="待处理">待处理</option>
-                                        <option value="进行中">进行中</option>
-                                        <option value="已完成">已完成</option>
-                                    </select>
+                                <div class="row mb-2">
+                                    <div class="col-sm-3">
+                                        <label class="form-label">订单日期 *</label>
+                                    </div>
+                                    <div class="col-sm-9">
+                                        <input type="date" class="form-control" v-model="editingPurchaseOrder.orderDate" required>
+                                    </div>
                                 </div>
-                                <div class="text-end">
-                                    <button type="button" class="btn btn-secondary me-2" data-bs-dismiss="modal">取消</button>
-                                    <button type="submit" class="btn btn-primary">保存</button>
+                                <div class="row mb-2">
+                                    <div class="col-sm-3">
+                                        <label class="form-label">预计到货日期 *</label>
+                                    </div>
+                                    <div class="col-sm-9">
+                                        <input type="date" class="form-control" v-model="editingPurchaseOrder.expectedDate" required>
+                                    </div>
+                                </div>
+                                <div class="row mb-2">
+                                    <div class="col-sm-3">
+                                        <label class="form-label">状态</label>
+                                    </div>
+                                    <div class="col-sm-9">
+                                        <select class="form-select" v-model="editingPurchaseOrder.status">
+                                            <option value="待处理">待处理</option>
+                                            <option value="进行中">进行中</option>
+                                            <option value="已完成">已完成</option>
+                                        </select>
+                                    </div>
+                                </div>
+                                <div class="text-end mt-3">
+                                    <button type="button" class="btn btn-sm btn-outline-secondary me-2" data-bs-dismiss="modal">取消</button>
+                                    <button type="submit" class="btn btn-sm btn-primary">保存</button>
                                 </div>
                             </form>
                         </div>
@@ -198,36 +222,51 @@ export default {
                             <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
                         </div>
                         <div class="modal-body">
-                            <form @submit.prevent="confirmStockIn">
-                                <div class="mb-3">
-                                    <label class="form-label">订单编号</label>
-                                    <input type="text" class="form-control" :value="stockInOrder?.orderNo" disabled>
+                            <form @submit.prevent="confirmStockIn" class="form-compact">
+                                <div class="row mb-2">
+                                    <div class="col-sm-3">
+                                        <label class="form-label">订单编号</label>
+                                    </div>
+                                    <div class="col-sm-9">
+                                        <input type="text" class="form-control" :value="stockInOrder?.orderNo" disabled>
+                                    </div>
                                 </div>
-                                <div class="mb-3">
-                                    <label class="form-label">入库物料清单</label>
-                                    <div v-for="(item, index) in stockInOrder?.items" :key="index" class="card mb-2">
-                                        <div class="card-body">
-                                            <div class="row">
-                                                <div class="col-6">
-                                                    <strong>{{ getMaterial(item.materialId)?.name }}</strong>
-                                                    <small class="text-muted d-block">订单数量: {{ item.quantity }}</small>
-                                                </div>
-                                                <div class="col-6">
-                                                    <label class="form-label">入库数量</label>
-                                                    <input type="number" class="form-control" v-model="stockInQuantities[index]" 
-                                                           :max="item.quantity" min="0" required>
+                                <div class="row mb-2">
+                                    <div class="col-sm-3">
+                                        <label class="form-label">入库物料清单</label>
+                                    </div>
+                                    <div class="col-sm-9">
+                                        <div v-for="(item, index) in stockInOrder?.items" :key="index" class="card mb-2">
+                                            <div class="card-body">
+                                                <div class="row">
+                                                    <div class="col-6">
+                                                        <strong>{{ getMaterial(item.materialId)?.name }}</strong>
+                                                        <small class="text-muted d-block">订单数量: {{ item.quantity }}</small>
+                                                    </div>
+                                                    <div class="col-6">
+                                                        <label class="form-label">入库数量 *</label>
+                                                        <input type="number" class="form-control" v-model="stockInQuantities[index]" 
+                                                               :max="item.quantity" min="0" required>
+                                                    </div>
                                                 </div>
                                             </div>
                                         </div>
                                     </div>
                                 </div>
-                                <div class="mb-3 form-check">
-                                    <input type="checkbox" class="form-check-input" id="requireIQCCheck" v-model="requireIQC">
-                                    <label class="form-check-label" for="requireIQCCheck">需要IQC检验</label>
+                                <div class="row mb-2">
+                                    <div class="col-sm-3">
+                                        <label class="form-label">检验要求</label>
+                                    </div>
+                                    <div class="col-sm-9">
+                                        <div class="form-check">
+                                            <input type="checkbox" class="form-check-input" id="requireIQCCheck" v-model="requireIQC">
+                                            <label class="form-check-label" for="requireIQCCheck">需要IQC检验</label>
+                                        </div>
+                                    </div>
                                 </div>
-                                <div class="text-end">
-                                    <button type="button" class="btn btn-secondary me-2" data-bs-dismiss="modal">取消</button>
-                                    <button type="submit" class="btn btn-primary">确认入库</button>
+                                <div class="text-end mt-3">
+                                    <button type="button" class="btn btn-sm btn-outline-secondary me-2" data-bs-dismiss="modal">取消</button>
+                                    <button type="submit" class="btn btn-sm btn-primary">确认入库</button>
                                 </div>
                             </form>
                         </div>

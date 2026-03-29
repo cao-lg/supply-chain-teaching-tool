@@ -1,0 +1,152 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>甘特图测试</title>
+    <script src="https://unpkg.com/echarts@5.4.3/dist/echarts.min.js"></script>
+    <style>
+        #ganttChart {
+            width: 100%;
+            height: 400px;
+            border: 1px solid #ccc;
+        }
+    </style>
+</head>
+<body>
+    <h1>甘特图测试</h1>
+    <div id="ganttChart"></div>
+    
+    <script>
+        // 模拟生产计划数据
+        const productionPlans = [
+            { id: 'pp1', planNo: 'PP-20260315-001', productId: 'p1', quantity: 10, startDate: '2026-03-15', endDate: '2026-03-20', status: 'completed' },
+            { id: 'pp2', planNo: 'PP-20260325-001', productId: 'p1', quantity: 15, startDate: '2026-03-25', endDate: '2026-04-01', status: 'in_progress' }
+        ];
+        
+        // 模拟产品名称映射
+        const getProductName = (productId) => {
+            const products = {
+                'p1': '智能手表',
+                'p2': '无线耳机'
+            };
+            return products[productId] || '未知产品';
+        };
+        
+        // 初始化甘特图
+        function initGanttChart() {
+            const chartDom = document.getElementById('ganttChart');
+            if (!chartDom) {
+                console.log('甘特图容器不存在');
+                return;
+            }
+            
+            const chart = echarts.init(chartDom);
+            console.log('ECharts实例:', chart);
+            console.log('生产计划数据:', productionPlans);
+            
+            if (productionPlans.length === 0) {
+                chart.setOption({
+                    title: {
+                        text: '暂无生产计划数据',
+                        left: 'center',
+                        top: 'center',
+                        textStyle: {
+                            color: '#999',
+                            fontSize: 14
+                        }
+                    }
+                });
+                return;
+            }
+            
+            // 准备数据
+            const seriesData = [];
+            const yAxisData = [];
+            
+            productionPlans.forEach((plan, index) => {
+                const productName = getProductName(plan.productId);
+                if (!yAxisData.includes(productName)) {
+                    yAxisData.push(productName);
+                }
+                
+                const statusColor = plan.status === '已完成' || plan.status === 'completed' ? '#52c41a' : 
+                                    plan.status === '进行中' || plan.status === 'in_progress' ? '#faad14' : '#1890ff';
+                
+                seriesData.push({
+                    name: productName,
+                    value: [
+                        yAxisData.indexOf(productName),
+                        plan.startDate,
+                        plan.endDate
+                    ],
+                    itemStyle: { color: statusColor }
+                });
+            });
+            
+            console.log('yAxisData:', yAxisData);
+            console.log('seriesData:', seriesData);
+            
+            // 甘特图配置
+            const option = {
+                title: {
+                    text: '生产排产甘特图',
+                    left: 'center'
+                },
+                tooltip: {
+                    trigger: 'item',
+                    formatter: function(params) {
+                        return params.name + '<br/>' + 
+                               '开始: ' + params.value[1] + '<br/>' + 
+                               '结束: ' + params.value[2];
+                    }
+                },
+                grid: {
+                    left: '10%',
+                    right: '10%',
+                    top: '15%',
+                    bottom: '10%'
+                },
+                xAxis: {
+                    type: 'time'
+                },
+                yAxis: {
+                    type: 'category',
+                    data: yAxisData
+                },
+                series: [{
+                    type: 'custom',
+                    renderItem: function(params, api) {
+                        const categoryIndex = api.value(0);
+                        const start = api.coord([api.value(1), categoryIndex]);
+                        const end = api.coord([api.value(2), categoryIndex]);
+                        const height = 20;
+                        
+                        return {
+                            type: 'rect',
+                            shape: {
+                                x: start[0],
+                                y: start[1] - height / 2,
+                                width: end[0] - start[0],
+                                height: height
+                            },
+                            style: api.style()
+                        };
+                    },
+                    encode: {
+                        x: [1, 2],
+                        y: 0
+                    },
+                    data: seriesData
+                }]
+            };
+            
+            chart.setOption(option);
+            console.log('甘特图初始化完成');
+        }
+        
+        // 页面加载完成后初始化甘特图
+        window.onload = initGanttChart;
+    </script>
+</body>
+</html>

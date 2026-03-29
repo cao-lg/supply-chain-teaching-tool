@@ -115,7 +115,7 @@ export default {
             </div>
 
             <!-- 确认模态框 -->
-            <div class="modal fade" id="confirmModal" tabindex="-1" ref="confirmModal">
+            <div class="modal fade" id="dataManagerConfirmModal" tabindex="-1" ref="confirmModal">
                 <div class="modal-dialog modal-dialog-centered">
                     <div class="modal-content">
                         <div class="modal-header" :class="confirmType === 'clear' ? 'bg-danger text-white' : 'bg-warning'">
@@ -153,9 +153,8 @@ export default {
     },
     mounted() {
         this.$nextTick(() => {
-            const modalEl = document.getElementById('confirmModal');
-            if (modalEl) {
-                this.modalInstance = new bootstrap.Modal(modalEl);
+            if (this.$refs.confirmModal) {
+                this.modalInstance = new bootstrap.Modal(this.$refs.confirmModal);
             }
         });
     },

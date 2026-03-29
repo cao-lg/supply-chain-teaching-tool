@@ -24,6 +24,18 @@
                             <a class="nav-link" :class="{ active: currentPage === index }" @click="switchPage(index)">{{ item }}</a>
                         </li>
                     </ul>
+                    <ul class="navbar-nav">
+                        <li class="nav-item dropdown">
+                            <a class="nav-link dropdown-toggle" href="#" id="userDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                                <i class="fas fa-user-circle me-1"></i> {{ currentUser ? currentUser.username + ' (' + currentUser.code + ')' : '用户' }}
+                            </a>
+                            <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="userDropdown">
+                                <li><a class="dropdown-item" @click="showUserModal">用户管理</a></li>
+                                <li><hr class="dropdown-divider"></li>
+                                <li><a class="dropdown-item" @click="clearAllData">清空数据</a></li>
+                            </ul>
+                        </li>
+                    </ul>
                 </div>
             </div>
         </nav>
@@ -339,6 +351,14 @@
                         </div>
                         <div class="modal-body">
                             <p>这是一个帮助您学习供应链管理的交互式工具。</p>
+                            
+                            <!-- 用户名输入 -->
+                            <div class="mb-4">
+                                <label class="form-label font-weight-bold">请设置您的用户名</label>
+                                <input type="text" id="usernameInput" class="form-control" placeholder="请输入用户名" value="">
+                                <small class="text-muted">设置用户名后，您的练习数据将与其他用户隔离</small>
+                            </div>
+                            
                             <h6>📚 主要功能：</h6>
                             <ul>
                                 <li><strong>基础资料</strong> - 管理产品、物料、供应商、客户</li>
@@ -351,7 +371,7 @@
                             </div>
                         </div>
                         <div class="modal-footer">
-                            <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">开始使用</button>
+                            <button type="button" class="btn btn-outline-secondary" id="startBtn">开始使用</button>
                             <button type="button" class="btn btn-primary" id="loadSampleBtn">
                                 <i class="fas fa-database"></i> 加载示例数据
                             </button>
@@ -373,20 +393,68 @@
             </div>
 
             <!-- 全局确认弹窗 -->
-            <div class="modal fade" id="confirmModal" tabindex="-1">
-                <div class="modal-dialog modal-dialog-centered modal-sm">
+            <div class="modal fade" id="confirmModal" tabindex="-1" ref="confirmModal">
+                <div class="modal-dialog modal-dialog-centered">
                     <div class="modal-content">
                         <div class="modal-header bg-danger text-white">
                             <h5 class="modal-title"><i class="fas fa-exclamation-triangle me-2"></i>确认操作</h5>
+                            <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
                         </div>
                         <div class="modal-body">
-                            <p id="confirmMessage" class="mb-0"></p>
+                            <p class="mb-0">{{ confirmMessage }}</p>
                         </div>
                         <div class="modal-footer">
-                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">取消</button>
-                            <button type="button" class="btn btn-danger" id="confirmBtn">
-                                <i class="fas fa-trash"></i> 确定
-                            </button>
+                            <button type="button" class="btn btn-sm btn-outline-secondary" data-bs-dismiss="modal">取消</button>
+                            <button type="button" class="btn btn-sm btn-danger" @click="executeConfirm">确定</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 用户管理弹窗 -->
+            <div class="modal fade" id="userModal" tabindex="-1" ref="userModal">
+                <div class="modal-dialog modal-dialog-centered">
+                    <div class="modal-content">
+                        <div class="modal-header bg-primary text-white">
+                            <h5 class="modal-title"><i class="fas fa-users-cog me-2"></i>用户管理</h5>
+                            <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                        </div>
+                        <div class="modal-body">
+                            <!-- 创建新用户 -->
+                            <div class="mb-4">
+                                <h6 class="font-weight-bold mb-2">创建新用户</h6>
+                                <div class="input-group">
+                                    <input type="text" v-model="newUsername" class="form-control" placeholder="请输入用户名">
+                                    <button type="button" class="btn btn-primary" @click="createNewUser">
+                                        <i class="fas fa-plus"></i> 创建
+                                    </button>
+                                </div>
+                            </div>
+                            
+                            <!-- 已有用户列表 -->
+                            <div>
+                                <h6 class="font-weight-bold mb-2">已有用户</h6>
+                                <div v-if="users && users.length > 0" class="list-group">
+                                    <button 
+                                        v-for="user in users" 
+                                        :key="user.id" 
+                                        class="list-group-item list-group-item-action d-flex justify-content-between align-items-center"
+                                        @click="switchToUser(user.id)"
+                                    >
+                                        <div>
+                                            <div class="font-weight-medium">{{ user.username }}</div>
+                                            <div class="text-xs text-muted">{{ user.code }} - {{ new Date(user.createdAt).toLocaleString() }}</div>
+                                        </div>
+                                        <span class="badge bg-primary">{{ currentUser && currentUser.id === user.id ? '当前' : '' }}</span>
+                                    </button>
+                                </div>
+                                <div v-else class="text-muted text-center py-3">
+                                    暂无用户
+                                </div>
+                            </div>
+                        </div>
+                        <div class="modal-footer">
+                            <button type="button" class="btn btn-sm btn-outline-secondary" data-bs-dismiss="modal">关闭</button>
                         </div>
                     </div>
                 </div>

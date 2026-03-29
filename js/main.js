@@ -2,7 +2,7 @@
  * 供应链管理教学工具 - 主应用入口
  */
 
-import { loadData, saveData, exportData, importData, loadSampleData, clearData } from './store.js';
+import { loadData, saveData, exportData, importData, loadSampleData, clearData, initDataSync, resetUserId, getCurrentUser, getUsers, setCurrentUser } from './store.js';
 import BasicDataModule from './modules/basicData.js';
 import ProductionPlanModule from './modules/productionPlan.js';
 import PurchasePlanModule from './modules/purchasePlan.js';
@@ -28,8 +28,17 @@ const app = createApp({
         let chart1 = null;
         let chart2 = null;
         let chart3 = null;
+        let confirmModalInstance = null;
+        let userModalInstance = null;
         
         const data = ref(loadData());
+        const confirmMessage = ref('');
+        const pendingCallback = ref(null);
+        const confirmModal = ref(null);
+        const currentUser = ref(getCurrentUser());
+        const users = ref(getUsers());
+        const newUsername = ref('');
+        const userModal = ref(null);
 
         /**
          * 计算总销售额
@@ -241,31 +250,175 @@ const app = createApp({
             chart3 && chart3.resize();
         };
 
+
+
+        /**
+         * 显示确认操作弹窗
+         * @param {string} message - 确认消息
+         * @param {Function} callback - 确认后的回调函数
+         */
+        const confirmAction = (message, callback) => {
+            confirmMessage.value = message;
+            pendingCallback.value = callback;
+            if (confirmModalInstance) {
+                confirmModalInstance.show();
+            }
+        };
+
+        /**
+         * 执行确认操作
+         */
+        const executeConfirm = () => {
+            if (pendingCallback.value) {
+                pendingCallback.value();
+                pendingCallback.value = null;
+            }
+            if (confirmModalInstance) {
+                confirmModalInstance.hide();
+            }
+        };
+
+        /**
+         * 显示用户管理模态框
+         */
+        const showUserModal = () => {
+            users.value = getUsers();
+            newUsername.value = '';
+            if (userModalInstance) {
+                userModalInstance.show();
+            }
+        };
+
+        /**
+         * 创建新用户
+         */
+        const createNewUser = () => {
+            if (!newUsername.value.trim()) {
+                showToast('warning', '提示', '请输入用户名');
+                return;
+            }
+            
+            const userInfo = resetUserId(newUsername.value.trim());
+            if (userInfo) {
+                currentUser.value = userInfo;
+                users.value = getUsers();
+                data.value = loadData();
+                initCharts();
+                if (userModalInstance) {
+                    userModalInstance.hide();
+                }
+                showToast('success', '成功', `已创建新用户：${userInfo.username} (${userInfo.code})`);
+            }
+        };
+
+        /**
+         * 切换到已有用户
+         * @param {string} userId - 用户ID
+         */
+        const switchToUser = (userId) => {
+            const userInfo = setCurrentUser(userId);
+            if (userInfo) {
+                currentUser.value = userInfo;
+                data.value = loadData();
+                initCharts();
+                if (userModalInstance) {
+                    userModalInstance.hide();
+                }
+                showToast('success', '成功', `已切换到用户：${userInfo.username} (${userInfo.code})`);
+            }
+        };
+
+        /**
+         * 刷新用户信息
+         */
+        const refreshUserInfo = () => {
+            currentUser.value = getCurrentUser();
+            users.value = getUsers();
+        };
+
+        /**
+         * 清空当前用户的数据
+         */
+        const clearAllData = () => {
+            confirmAction('确定要清空当前用户的所有数据吗？此操作不可撤销。', () => {
+                clearData();
+                data.value = loadData();
+                initCharts();
+                showToast('success', '成功', '数据已清空');
+            });
+        };
+
         onMounted(() => {
             initCharts();
             window.addEventListener('resize', handleResize);
             window.addEventListener('data-updated', () => {
                 data.value = loadData();
+                refreshUserInfo();
                 initCharts();
             });
             
+            // 初始化确认模态框
+            if (confirmModal.value) {
+                confirmModalInstance = new bootstrap.Modal(confirmModal.value);
+            }
+            
+            // 初始化用户管理模态框
+            if (userModal.value) {
+                userModalInstance = new bootstrap.Modal(userModal.value);
+            }
+            
             // 检测是否首次访问
-            const storedData = localStorage.getItem('scm_data');
+            const storedData = localStorage.getItem('scm_user_id');
             if (!storedData) {
                 setTimeout(() => {
                     const welcomeModal = new bootstrap.Modal(document.getElementById('welcomeModal'));
                     welcomeModal.show();
                 }, 500);
+            } else {
+                // 刷新用户信息
+                refreshUserInfo();
             }
+            
+            // 开始使用按钮事件
+            document.getElementById('startBtn')?.addEventListener('click', () => {
+                const usernameInput = document.getElementById('usernameInput');
+                const username = usernameInput?.value.trim() || '新用户';
+                
+                // 创建新用户
+                const userInfo = resetUserId(username);
+                if (userInfo) {
+                    currentUser.value = userInfo;
+                    users.value = getUsers();
+                    data.value = loadData();
+                    
+                    const welcomeModal = bootstrap.Modal.getInstance(document.getElementById('welcomeModal'));
+                    welcomeModal.hide();
+                    
+                    showToast('success', '成功', `欢迎您，${userInfo.username} (${userInfo.code})！`);
+                }
+            });
             
             // 加载示例数据按钮事件
             document.getElementById('loadSampleBtn')?.addEventListener('click', () => {
-                loadSampleData();
-                bootstrap.Modal.getInstance(document.getElementById('welcomeModal')).hide();
-                showToast('success', '成功', '示例数据已加载，您可以开始体验了！');
-                // 刷新页面数据
-                window.dispatchEvent(new CustomEvent('data-updated'));
-                setTimeout(() => initCharts(), 100);
+                const usernameInput = document.getElementById('usernameInput');
+                const username = usernameInput?.value.trim() || '新用户';
+                
+                confirmAction('确定要加载示例数据吗？这将覆盖当前用户的所有数据。', () => {
+                    // 创建新用户
+                    const userInfo = resetUserId(username);
+                    if (userInfo) {
+                        currentUser.value = userInfo;
+                        users.value = getUsers();
+                        
+                        loadSampleData();
+                        const welcomeModal = bootstrap.Modal.getInstance(document.getElementById('welcomeModal'));
+                        welcomeModal.hide();
+                        showToast('success', '成功', `欢迎您，${userInfo.username} (${userInfo.code})！示例数据已加载，您可以开始体验了！`);
+                        // 刷新页面数据
+                        window.dispatchEvent(new CustomEvent('data-updated'));
+                        setTimeout(() => initCharts(), 100);
+                    }
+                });
             });
         });
 
@@ -281,7 +434,18 @@ const app = createApp({
             efficiencyChange,
             orderCount,
             orderGrowth,
-            formatNumber
+            formatNumber,
+            clearAllData,
+            confirmMessage,
+            executeConfirm,
+            confirmModal,
+            currentUser,
+            users,
+            newUsername,
+            userModal,
+            showUserModal,
+            createNewUser,
+            switchToUser
         };
     }
 });
@@ -327,42 +491,7 @@ window.showToast = (type, title, message) => {
     bsToast.show();
 };
 
-/**
- * 显示确认弹窗
- * @param {string} message - 确认消息
- * @returns {Promise<boolean>} 用户选择结果
- */
-window.confirmAction = (message) => {
-    return new Promise((resolve) => {
-        const modal = document.getElementById('confirmModal');
-        const messageEl = document.getElementById('confirmMessage');
-        const confirmBtn = document.getElementById('confirmBtn');
-        
-        messageEl.textContent = message;
-        
-        const bsModal = new bootstrap.Modal(modal, { backdrop: 'static' });
-        
-        const handleConfirm = () => {
-            bsModal.hide();
-            resolve(true);
-            cleanup();
-        };
-        
-        const handleCancel = () => {
-            resolve(false);
-            cleanup();
-        };
-        
-        const cleanup = () => {
-            confirmBtn.removeEventListener('click', handleConfirm);
-            modal.removeEventListener('hidden.bs.modal', handleCancel);
-        };
-        
-        confirmBtn.addEventListener('click', handleConfirm);
-        modal.addEventListener('hidden.bs.modal', handleCancel, { once: true });
-        
-        bsModal.show();
-    });
-};
+// 初始化数据同步
+initDataSync();
 
 app.mount('#app');

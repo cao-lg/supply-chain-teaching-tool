@@ -226,34 +226,46 @@ export default {
                             <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
                         </div>
                         <div class="modal-body">
-                            <form @submit.prevent="saveInventoryAdjust">
-                                <div class="mb-3">
-                                    <label class="form-label">{{ adjustType === 'material' ? '物料' : '产品' }}</label>
-                                    <select class="form-select" v-model="adjustItemId" :disabled="!!adjustingItem" required>
-                                        <option v-for="item in (adjustType === 'material' ? data.materials : data.products)" 
-                                                :key="item.id" :value="item.id">
-                                            {{ item.name }}
-                                        </option>
-                                    </select>
+                            <form @submit.prevent="saveInventoryAdjust" class="form-compact">
+                                <div class="row mb-2">
+                                    <div class="col-sm-3">
+                                        <label class="form-label">{{ adjustType === 'material' ? '物料' : '产品' }} *</label>
+                                    </div>
+                                    <div class="col-sm-9">
+                                        <select class="form-select" v-model="adjustItemId" :disabled="!!adjustingItem" required>
+                                            <option v-for="item in (adjustType === 'material' ? data.materials : data.products)" 
+                                                    :key="item.id" :value="item.id">
+                                                {{ item.name }}
+                                            </option>
+                                        </select>
+                                    </div>
                                 </div>
-                                <div class="mb-3">
-                                    <label class="form-label">调整方式</label>
-                                    <select class="form-select" v-model="adjustMethod">
-                                        <option value="add">增加</option>
-                                        <option value="subtract">减少</option>
-                                        <option value="set">设置</option>
-                                    </select>
+                                <div class="row mb-2">
+                                    <div class="col-sm-3">
+                                        <label class="form-label">调整方式</label>
+                                    </div>
+                                    <div class="col-sm-9">
+                                        <select class="form-select" v-model="adjustMethod">
+                                            <option value="add">增加</option>
+                                            <option value="subtract">减少</option>
+                                            <option value="set">设置</option>
+                                        </select>
+                                    </div>
                                 </div>
-                                <div class="mb-3">
-                                    <label class="form-label">数量</label>
-                                    <input type="number" class="form-control" v-model="adjustQuantity" required min="1">
+                                <div class="row mb-2">
+                                    <div class="col-sm-3">
+                                        <label class="form-label">数量 *</label>
+                                    </div>
+                                    <div class="col-sm-9">
+                                        <input type="number" class="form-control" v-model="adjustQuantity" required min="1">
+                                    </div>
                                 </div>
                                 <div v-if="adjustingItem" class="alert alert-info">
                                     当前库存：{{ adjustingItem.quantity }}
                                 </div>
-                                <div class="text-end">
-                                    <button type="button" class="btn btn-secondary me-2" data-bs-dismiss="modal">取消</button>
-                                    <button type="submit" class="btn btn-primary">保存</button>
+                                <div class="text-end mt-3">
+                                    <button type="button" class="btn btn-sm btn-outline-secondary me-2" data-bs-dismiss="modal">取消</button>
+                                    <button type="submit" class="btn btn-sm btn-primary">保存</button>
                                 </div>
                             </form>
                         </div>

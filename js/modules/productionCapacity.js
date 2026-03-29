@@ -187,33 +187,53 @@ export default {
                             <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
                         </div>
                         <div class="modal-body">
-                            <form @submit.prevent="saveEquipment">
-                                <div class="mb-3">
-                                    <label class="form-label">设备编号</label>
-                                    <input type="text" class="form-control" v-model="editingEquipment.code" required>
+                            <form @submit.prevent="saveEquipment" class="form-compact">
+                                <div class="row mb-2">
+                                    <div class="col-sm-3">
+                                        <label class="form-label">设备编号 *</label>
+                                    </div>
+                                    <div class="col-sm-9">
+                                        <input type="text" class="form-control" v-model="editingEquipment.code" required>
+                                    </div>
                                 </div>
-                                <div class="mb-3">
-                                    <label class="form-label">设备名称</label>
-                                    <input type="text" class="form-control" v-model="editingEquipment.name" required>
+                                <div class="row mb-2">
+                                    <div class="col-sm-3">
+                                        <label class="form-label">设备名称 *</label>
+                                    </div>
+                                    <div class="col-sm-9">
+                                        <input type="text" class="form-control" v-model="editingEquipment.name" required>
+                                    </div>
                                 </div>
-                                <div class="mb-3">
-                                    <label class="form-label">设备类型</label>
-                                    <input type="text" class="form-control" v-model="editingEquipment.type" required>
+                                <div class="row mb-2">
+                                    <div class="col-sm-3">
+                                        <label class="form-label">设备类型 *</label>
+                                    </div>
+                                    <div class="col-sm-9">
+                                        <input type="text" class="form-control" v-model="editingEquipment.type" required>
+                                    </div>
                                 </div>
-                                <div class="mb-3">
-                                    <label class="form-label">产能(单位/天)</label>
-                                    <input type="number" class="form-control" v-model="editingEquipment.capacityPerDay" required min="0">
+                                <div class="row mb-2">
+                                    <div class="col-sm-3">
+                                        <label class="form-label">产能(单位/天) *</label>
+                                    </div>
+                                    <div class="col-sm-9">
+                                        <input type="number" class="form-control" v-model="editingEquipment.capacityPerDay" required min="0">
+                                    </div>
                                 </div>
-                                <div class="mb-3">
-                                    <label class="form-label">状态</label>
-                                    <select class="form-select" v-model="editingEquipment.status">
-                                        <option value="正常">正常</option>
-                                        <option value="故障">故障</option>
-                                    </select>
+                                <div class="row mb-2">
+                                    <div class="col-sm-3">
+                                        <label class="form-label">状态</label>
+                                    </div>
+                                    <div class="col-sm-9">
+                                        <select class="form-select" v-model="editingEquipment.status">
+                                            <option value="正常">正常</option>
+                                            <option value="故障">故障</option>
+                                        </select>
+                                    </div>
                                 </div>
-                                <div class="text-end">
-                                    <button type="button" class="btn btn-secondary me-2" data-bs-dismiss="modal">取消</button>
-                                    <button type="submit" class="btn btn-primary">保存</button>
+                                <div class="text-end mt-3">
+                                    <button type="button" class="btn btn-sm btn-outline-secondary me-2" data-bs-dismiss="modal">取消</button>
+                                    <button type="submit" class="btn btn-sm btn-primary">保存</button>
                                 </div>
                             </form>
                         </div>
@@ -230,33 +250,53 @@ export default {
                             <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
                         </div>
                         <div class="modal-body">
-                            <form @submit.prevent="saveWorker">
-                                <div class="mb-3">
-                                    <label class="form-label">工号</label>
-                                    <input type="text" class="form-control" v-model="editingWorker.code" required>
+                            <form @submit.prevent="saveWorker" class="form-compact">
+                                <div class="row mb-2">
+                                    <div class="col-sm-3">
+                                        <label class="form-label">工号 *</label>
+                                    </div>
+                                    <div class="col-sm-9">
+                                        <input type="text" class="form-control" v-model="editingWorker.code" required>
+                                    </div>
                                 </div>
-                                <div class="mb-3">
-                                    <label class="form-label">姓名</label>
-                                    <input type="text" class="form-control" v-model="editingWorker.name" required>
+                                <div class="row mb-2">
+                                    <div class="col-sm-3">
+                                        <label class="form-label">姓名 *</label>
+                                    </div>
+                                    <div class="col-sm-9">
+                                        <input type="text" class="form-control" v-model="editingWorker.name" required>
+                                    </div>
                                 </div>
-                                <div class="mb-3">
-                                    <label class="form-label">工种</label>
-                                    <input type="text" class="form-control" v-model="editingWorker.type" required>
+                                <div class="row mb-2">
+                                    <div class="col-sm-3">
+                                        <label class="form-label">工种 *</label>
+                                    </div>
+                                    <div class="col-sm-9">
+                                        <input type="text" class="form-control" v-model="editingWorker.type" required>
+                                    </div>
                                 </div>
-                                <div class="mb-3">
-                                    <label class="form-label">工作效率</label>
-                                    <input type="number" class="form-control" v-model="editingWorker.efficiency" required min="0" max="100">
+                                <div class="row mb-2">
+                                    <div class="col-sm-3">
+                                        <label class="form-label">工作效率 *</label>
+                                    </div>
+                                    <div class="col-sm-9">
+                                        <input type="number" class="form-control" v-model="editingWorker.efficiency" required min="0" max="100">
+                                    </div>
                                 </div>
-                                <div class="mb-3">
-                                    <label class="form-label">状态</label>
-                                    <select class="form-select" v-model="editingWorker.status">
-                                        <option value="在职">在职</option>
-                                        <option value="离职">离职</option>
-                                    </select>
+                                <div class="row mb-2">
+                                    <div class="col-sm-3">
+                                        <label class="form-label">状态</label>
+                                    </div>
+                                    <div class="col-sm-9">
+                                        <select class="form-select" v-model="editingWorker.status">
+                                            <option value="在职">在职</option>
+                                            <option value="离职">离职</option>
+                                        </select>
+                                    </div>
                                 </div>
-                                <div class="text-end">
-                                    <button type="button" class="btn btn-secondary me-2" data-bs-dismiss="modal">取消</button>
-                                    <button type="submit" class="btn btn-primary">保存</button>
+                                <div class="text-end mt-3">
+                                    <button type="button" class="btn btn-sm btn-outline-secondary me-2" data-bs-dismiss="modal">取消</button>
+                                    <button type="submit" class="btn btn-sm btn-primary">保存</button>
                                 </div>
                             </form>
                         </div>
@@ -273,22 +313,34 @@ export default {
                             <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
                         </div>
                         <div class="modal-body">
-                            <form @submit.prevent="saveWorkhour">
-                                <div class="mb-3">
-                                    <label class="form-label">名称</label>
-                                    <input type="text" class="form-control" v-model="editingWorkhour.name" required>
+                            <form @submit.prevent="saveWorkhour" class="form-compact">
+                                <div class="row mb-2">
+                                    <div class="col-sm-3">
+                                        <label class="form-label">名称 *</label>
+                                    </div>
+                                    <div class="col-sm-9">
+                                        <input type="text" class="form-control" v-model="editingWorkhour.name" required>
+                                    </div>
                                 </div>
-                                <div class="mb-3">
-                                    <label class="form-label">每天工作小时</label>
-                                    <input type="number" class="form-control" v-model="editingWorkhour.hoursPerDay" required min="1" max="24">
+                                <div class="row mb-2">
+                                    <div class="col-sm-3">
+                                        <label class="form-label">每天工作小时 *</label>
+                                    </div>
+                                    <div class="col-sm-9">
+                                        <input type="number" class="form-control" v-model="editingWorkhour.hoursPerDay" required min="1" max="24">
+                                    </div>
                                 </div>
-                                <div class="mb-3">
-                                    <label class="form-label">每周工作日</label>
-                                    <input type="number" class="form-control" v-model="editingWorkhour.daysPerWeek" required min="1" max="7">
+                                <div class="row mb-2">
+                                    <div class="col-sm-3">
+                                        <label class="form-label">每周工作日 *</label>
+                                    </div>
+                                    <div class="col-sm-9">
+                                        <input type="number" class="form-control" v-model="editingWorkhour.daysPerWeek" required min="1" max="7">
+                                    </div>
                                 </div>
-                                <div class="text-end">
-                                    <button type="button" class="btn btn-secondary me-2" data-bs-dismiss="modal">取消</button>
-                                    <button type="submit" class="btn btn-primary">保存</button>
+                                <div class="text-end mt-3">
+                                    <button type="button" class="btn btn-sm btn-outline-secondary me-2" data-bs-dismiss="modal">取消</button>
+                                    <button type="submit" class="btn btn-sm btn-primary">保存</button>
                                 </div>
                             </form>
                         </div>

@@ -275,26 +275,42 @@ export default {
                             <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
                         </div>
                         <div class="modal-body">
-                            <form @submit.prevent="saveProduct">
-                                <div class="mb-3">
-                                    <label class="form-label">编码</label>
-                                    <input type="text" class="form-control" v-model="editingProduct.code" required>
+                            <form @submit.prevent="saveProduct" class="form-compact">
+                                <div class="row mb-2">
+                                    <div class="col-sm-3">
+                                        <label class="form-label">编码 *</label>
+                                    </div>
+                                    <div class="col-sm-9">
+                                        <input type="text" class="form-control" v-model="editingProduct.code" required>
+                                    </div>
                                 </div>
-                                <div class="mb-3">
-                                    <label class="form-label">名称</label>
-                                    <input type="text" class="form-control" v-model="editingProduct.name" required>
+                                <div class="row mb-2">
+                                    <div class="col-sm-3">
+                                        <label class="form-label">名称 *</label>
+                                    </div>
+                                    <div class="col-sm-9">
+                                        <input type="text" class="form-control" v-model="editingProduct.name" required>
+                                    </div>
                                 </div>
-                                <div class="mb-3">
-                                    <label class="form-label">描述</label>
-                                    <textarea class="form-control" v-model="editingProduct.description" rows="2"></textarea>
+                                <div class="row mb-2">
+                                    <div class="col-sm-3">
+                                        <label class="form-label">描述</label>
+                                    </div>
+                                    <div class="col-sm-9">
+                                        <textarea class="form-control" v-model="editingProduct.description" rows="2"></textarea>
+                                    </div>
                                 </div>
-                                <div class="mb-3">
-                                    <label class="form-label">单位</label>
-                                    <input type="text" class="form-control" v-model="editingProduct.unit" required>
+                                <div class="row mb-2">
+                                    <div class="col-sm-3">
+                                        <label class="form-label">单位 *</label>
+                                    </div>
+                                    <div class="col-sm-9">
+                                        <input type="text" class="form-control" v-model="editingProduct.unit" required>
+                                    </div>
                                 </div>
-                                <div class="text-end">
-                                    <button type="button" class="btn btn-secondary me-2" data-bs-dismiss="modal">取消</button>
-                                    <button type="submit" class="btn btn-primary">保存</button>
+                                <div class="text-end mt-3">
+                                    <button type="button" class="btn btn-sm btn-outline-secondary me-2" data-bs-dismiss="modal">取消</button>
+                                    <button type="submit" class="btn btn-sm btn-primary">保存</button>
                                 </div>
                             </form>
                         </div>
@@ -311,33 +327,53 @@ export default {
                             <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
                         </div>
                         <div class="modal-body">
-                            <form @submit.prevent="saveMaterial">
-                                <div class="mb-3">
-                                    <label class="form-label">编码</label>
-                                    <input type="text" class="form-control" v-model="editingMaterial.code" required>
+                            <form @submit.prevent="saveMaterial" class="form-compact">
+                                <div class="row mb-2">
+                                    <div class="col-sm-3">
+                                        <label class="form-label">编码 *</label>
+                                    </div>
+                                    <div class="col-sm-9">
+                                        <input type="text" class="form-control" v-model="editingMaterial.code" required>
+                                    </div>
                                 </div>
-                                <div class="mb-3">
-                                    <label class="form-label">名称</label>
-                                    <input type="text" class="form-control" v-model="editingMaterial.name" required>
+                                <div class="row mb-2">
+                                    <div class="col-sm-3">
+                                        <label class="form-label">名称 *</label>
+                                    </div>
+                                    <div class="col-sm-9">
+                                        <input type="text" class="form-control" v-model="editingMaterial.name" required>
+                                    </div>
                                 </div>
-                                <div class="mb-3">
-                                    <label class="form-label">类型</label>
-                                    <select class="form-select" v-model="editingMaterial.type" required>
-                                        <option value="采购">采购</option>
-                                        <option value="自制">自制</option>
-                                    </select>
+                                <div class="row mb-2">
+                                    <div class="col-sm-3">
+                                        <label class="form-label">类型 *</label>
+                                    </div>
+                                    <div class="col-sm-9">
+                                        <select class="form-select" v-model="editingMaterial.type" required>
+                                            <option value="采购">采购</option>
+                                            <option value="自制">自制</option>
+                                        </select>
+                                    </div>
                                 </div>
-                                <div class="mb-3">
-                                    <label class="form-label">单位</label>
-                                    <input type="text" class="form-control" v-model="editingMaterial.unit" required>
+                                <div class="row mb-2">
+                                    <div class="col-sm-3">
+                                        <label class="form-label">单位 *</label>
+                                    </div>
+                                    <div class="col-sm-9">
+                                        <input type="text" class="form-control" v-model="editingMaterial.unit" required>
+                                    </div>
                                 </div>
-                                <div class="mb-3">
-                                    <label class="form-label">单价</label>
-                                    <input type="number" class="form-control" v-model="editingMaterial.price" required min="0" step="0.01">
+                                <div class="row mb-2">
+                                    <div class="col-sm-3">
+                                        <label class="form-label">单价 *</label>
+                                    </div>
+                                    <div class="col-sm-9">
+                                        <input type="number" class="form-control" v-model="editingMaterial.price" required min="0" step="0.01">
+                                    </div>
                                 </div>
-                                <div class="text-end">
-                                    <button type="button" class="btn btn-secondary me-2" data-bs-dismiss="modal">取消</button>
-                                    <button type="submit" class="btn btn-primary">保存</button>
+                                <div class="text-end mt-3">
+                                    <button type="button" class="btn btn-sm btn-outline-secondary me-2" data-bs-dismiss="modal">取消</button>
+                                    <button type="submit" class="btn btn-sm btn-primary">保存</button>
                                 </div>
                             </form>
                         </div>
@@ -354,48 +390,76 @@ export default {
                             <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
                         </div>
                         <div class="modal-body">
-                            <form @submit.prevent="saveSupplier">
-                                <div class="mb-3">
-                                    <label class="form-label">编码</label>
-                                    <input type="text" class="form-control" v-model="editingSupplier.code" required>
+                            <form @submit.prevent="saveSupplier" class="form-compact">
+                                <div class="row mb-2">
+                                    <div class="col-sm-3">
+                                        <label class="form-label">编码 *</label>
+                                    </div>
+                                    <div class="col-sm-9">
+                                        <input type="text" class="form-control" v-model="editingSupplier.code" required>
+                                    </div>
                                 </div>
-                                <div class="mb-3">
-                                    <label class="form-label">名称</label>
-                                    <input type="text" class="form-control" v-model="editingSupplier.name" required>
+                                <div class="row mb-2">
+                                    <div class="col-sm-3">
+                                        <label class="form-label">名称 *</label>
+                                    </div>
+                                    <div class="col-sm-9">
+                                        <input type="text" class="form-control" v-model="editingSupplier.name" required>
+                                    </div>
                                 </div>
-                                <div class="mb-3">
-                                    <label class="form-label">联系人</label>
-                                    <input type="text" class="form-control" v-model="editingSupplier.contact">
+                                <div class="row mb-2">
+                                    <div class="col-sm-3">
+                                        <label class="form-label">联系人</label>
+                                    </div>
+                                    <div class="col-sm-9">
+                                        <input type="text" class="form-control" v-model="editingSupplier.contact">
+                                    </div>
                                 </div>
-                                <div class="mb-3">
-                                    <label class="form-label">电话</label>
-                                    <input type="text" class="form-control" v-model="editingSupplier.phone">
+                                <div class="row mb-2">
+                                    <div class="col-sm-3">
+                                        <label class="form-label">电话</label>
+                                    </div>
+                                    <div class="col-sm-9">
+                                        <input type="text" class="form-control" v-model="editingSupplier.phone">
+                                    </div>
                                 </div>
-                                <div class="mb-3">
-                                    <label class="form-label">地址</label>
-                                    <textarea class="form-control" v-model="editingSupplier.address" rows="2"></textarea>
+                                <div class="row mb-2">
+                                    <div class="col-sm-3">
+                                        <label class="form-label">地址</label>
+                                    </div>
+                                    <div class="col-sm-9">
+                                        <textarea class="form-control" v-model="editingSupplier.address" rows="2"></textarea>
+                                    </div>
                                 </div>
-                                <div class="mb-3">
-                                    <label class="form-label">分类</label>
-                                    <select class="form-select" v-model="editingSupplier.category">
-                                        <option value="">未分类</option>
-                                        <option value="战略供应商">战略供应商</option>
-                                        <option value="核心供应商">核心供应商</option>
-                                        <option value="一般供应商">一般供应商</option>
-                                        <option value="临时供应商">临时供应商</option>
-                                    </select>
+                                <div class="row mb-2">
+                                    <div class="col-sm-3">
+                                        <label class="form-label">分类</label>
+                                    </div>
+                                    <div class="col-sm-9">
+                                        <select class="form-select" v-model="editingSupplier.category">
+                                            <option value="">未分类</option>
+                                            <option value="战略供应商">战略供应商</option>
+                                            <option value="核心供应商">核心供应商</option>
+                                            <option value="一般供应商">一般供应商</option>
+                                            <option value="临时供应商">临时供应商</option>
+                                        </select>
+                                    </div>
                                 </div>
-                                <div class="mb-3">
-                                    <label class="form-label">状态</label>
-                                    <select class="form-select" v-model="editingSupplier.status">
-                                        <option value="活跃">活跃</option>
-                                        <option value="暂停">暂停</option>
-                                        <option value="终止">终止</option>
-                                    </select>
+                                <div class="row mb-2">
+                                    <div class="col-sm-3">
+                                        <label class="form-label">状态</label>
+                                    </div>
+                                    <div class="col-sm-9">
+                                        <select class="form-select" v-model="editingSupplier.status">
+                                            <option value="活跃">活跃</option>
+                                            <option value="暂停">暂停</option>
+                                            <option value="终止">终止</option>
+                                        </select>
+                                    </div>
                                 </div>
-                                <div class="text-end">
-                                    <button type="button" class="btn btn-secondary me-2" data-bs-dismiss="modal">取消</button>
-                                    <button type="submit" class="btn btn-primary">保存</button>
+                                <div class="text-end mt-3">
+                                    <button type="button" class="btn btn-sm btn-outline-secondary me-2" data-bs-dismiss="modal">取消</button>
+                                    <button type="submit" class="btn btn-sm btn-primary">保存</button>
                                 </div>
                             </form>
                         </div>
@@ -412,54 +476,74 @@ export default {
                             <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
                         </div>
                         <div class="modal-body">
-                            <form @submit.prevent="saveSupplierEvaluation">
-                                <div class="mb-3">
-                                    <label class="form-label">整体评分</label>
-                                    <div class="d-flex align-items-center">
-                                        <input type="range" class="form-range me-3" v-model="evaluation.rating" min="0" max="5" step="0.5" style="flex: 1;">
-                                        <span class="fs-4">{{ evaluation.rating }}</span>
+                            <form @submit.prevent="saveSupplierEvaluation" class="form-compact">
+                                <div class="row mb-2">
+                                    <div class="col-sm-3">
+                                        <label class="form-label">整体评分</label>
                                     </div>
-                                    <div class="stars mt-2">
-                                        <span v-for="i in 5" :key="i" class="star" :class="{ active: i <= evaluation.rating }" @click="evaluation.rating = i">★</span>
+                                    <div class="col-sm-9">
+                                        <div class="d-flex align-items-center">
+                                            <input type="range" class="form-range me-3" v-model="evaluation.rating" min="0" max="5" step="0.5" style="flex: 1;">
+                                            <span class="fs-4">{{ evaluation.rating }}</span>
+                                        </div>
+                                        <div class="stars mt-2">
+                                            <span v-for="i in 5" :key="i" class="star" :class="{ active: i <= evaluation.rating }" @click="evaluation.rating = i">★</span>
+                                        </div>
                                     </div>
                                 </div>
-                                <div class="mb-3">
-                                    <label class="form-label">质量评分</label>
-                                    <select class="form-select" v-model="evaluation.qualityScore">
-                                        <option value="5">优秀</option>
-                                        <option value="4">良好</option>
-                                        <option value="3">一般</option>
-                                        <option value="2">较差</option>
-                                        <option value="1">差</option>
-                                    </select>
+                                <div class="row mb-2">
+                                    <div class="col-sm-3">
+                                        <label class="form-label">质量评分</label>
+                                    </div>
+                                    <div class="col-sm-9">
+                                        <select class="form-select" v-model="evaluation.qualityScore">
+                                            <option value="5">优秀</option>
+                                            <option value="4">良好</option>
+                                            <option value="3">一般</option>
+                                            <option value="2">较差</option>
+                                            <option value="1">差</option>
+                                        </select>
+                                    </div>
                                 </div>
-                                <div class="mb-3">
-                                    <label class="form-label">交期评分</label>
-                                    <select class="form-select" v-model="evaluation.deliveryScore">
-                                        <option value="5">优秀</option>
-                                        <option value="4">良好</option>
-                                        <option value="3">一般</option>
-                                        <option value="2">较差</option>
-                                        <option value="1">差</option>
-                                    </select>
+                                <div class="row mb-2">
+                                    <div class="col-sm-3">
+                                        <label class="form-label">交期评分</label>
+                                    </div>
+                                    <div class="col-sm-9">
+                                        <select class="form-select" v-model="evaluation.deliveryScore">
+                                            <option value="5">优秀</option>
+                                            <option value="4">良好</option>
+                                            <option value="3">一般</option>
+                                            <option value="2">较差</option>
+                                            <option value="1">差</option>
+                                        </select>
+                                    </div>
                                 </div>
-                                <div class="mb-3">
-                                    <label class="form-label">服务评分</label>
-                                    <select class="form-select" v-model="evaluation.serviceScore">
-                                        <option value="5">优秀</option>
-                                        <option value="4">良好</option>
-                                        <option value="3">一般</option>
-                                        <option value="2">较差</option>
-                                        <option value="1">差</option>
-                                    </select>
+                                <div class="row mb-2">
+                                    <div class="col-sm-3">
+                                        <label class="form-label">服务评分</label>
+                                    </div>
+                                    <div class="col-sm-9">
+                                        <select class="form-select" v-model="evaluation.serviceScore">
+                                            <option value="5">优秀</option>
+                                            <option value="4">良好</option>
+                                            <option value="3">一般</option>
+                                            <option value="2">较差</option>
+                                            <option value="1">差</option>
+                                        </select>
+                                    </div>
                                 </div>
-                                <div class="mb-3">
-                                    <label class="form-label">评价</label>
-                                    <textarea class="form-control" v-model="evaluation.comment" rows="3"></textarea>
+                                <div class="row mb-2">
+                                    <div class="col-sm-3">
+                                        <label class="form-label">评价</label>
+                                    </div>
+                                    <div class="col-sm-9">
+                                        <textarea class="form-control" v-model="evaluation.comment" rows="3"></textarea>
+                                    </div>
                                 </div>
-                                <div class="text-end">
-                                    <button type="button" class="btn btn-secondary me-2" data-bs-dismiss="modal">取消</button>
-                                    <button type="submit" class="btn btn-primary">保存评估</button>
+                                <div class="text-end mt-3">
+                                    <button type="button" class="btn btn-sm btn-outline-secondary me-2" data-bs-dismiss="modal">取消</button>
+                                    <button type="submit" class="btn btn-sm btn-primary">保存评估</button>
                                 </div>
                             </form>
                         </div>
@@ -476,61 +560,85 @@ export default {
                             <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
                         </div>
                         <div class="modal-body">
-                            <form @submit.prevent="saveCustomer">
-                                <div class="mb-3">
-                                    <label class="form-label">编码</label>
-                                    <input type="text" class="form-control" v-model="editingCustomer.code" required>
+                            <form @submit.prevent="saveCustomer" class="form-compact">
+                                <div class="row mb-2">
+                                    <div class="col-sm-3">
+                                        <label class="form-label">编码 *</label>
+                                    </div>
+                                    <div class="col-sm-9">
+                                        <input type="text" class="form-control" v-model="editingCustomer.code" required>
+                                    </div>
                                 </div>
-                                <div class="mb-3">
-                                    <label class="form-label">名称</label>
-                                    <input type="text" class="form-control" v-model="editingCustomer.name" required>
+                                <div class="row mb-2">
+                                    <div class="col-sm-3">
+                                        <label class="form-label">名称 *</label>
+                                    </div>
+                                    <div class="col-sm-9">
+                                        <input type="text" class="form-control" v-model="editingCustomer.name" required>
+                                    </div>
                                 </div>
-                                <div class="mb-3">
-                                    <label class="form-label">联系人</label>
-                                    <input type="text" class="form-control" v-model="editingCustomer.contact">
+                                <div class="row mb-2">
+                                    <div class="col-sm-3">
+                                        <label class="form-label">联系人</label>
+                                    </div>
+                                    <div class="col-sm-9">
+                                        <input type="text" class="form-control" v-model="editingCustomer.contact">
+                                    </div>
                                 </div>
-                                <div class="mb-3">
-                                    <label class="form-label">电话</label>
-                                    <input type="text" class="form-control" v-model="editingCustomer.phone">
+                                <div class="row mb-2">
+                                    <div class="col-sm-3">
+                                        <label class="form-label">电话</label>
+                                    </div>
+                                    <div class="col-sm-9">
+                                        <input type="text" class="form-control" v-model="editingCustomer.phone">
+                                    </div>
                                 </div>
-                                <div class="mb-3">
-                                    <label class="form-label">地址</label>
-                                    <textarea class="form-control" v-model="editingCustomer.address" rows="2"></textarea>
+                                <div class="row mb-2">
+                                    <div class="col-sm-3">
+                                        <label class="form-label">地址</label>
+                                    </div>
+                                    <div class="col-sm-9">
+                                        <textarea class="form-control" v-model="editingCustomer.address" rows="2"></textarea>
+                                    </div>
                                 </div>
-                                <div class="mb-3">
-                                    <label class="form-label">交货日期规则</label>
-                                    <div v-for="(rule, index) in editingCustomer.deliveryRules" :key="index" class="border p-3 mb-2">
-                                        <div class="row mb-2">
-                                            <div class="col-md-4">
-                                                <label class="form-label">规则类型</label>
-                                                <select class="form-select" v-model="rule.type" required>
-                                                    <option value="fixed_days">固定天数</option>
-                                                    <option value="working_days">工作日计算</option>
-                                                    <option value="specific_date">特定日期</option>
-                                                </select>
-                                            </div>
-                                            <div class="col-md-4" v-if="rule.type === 'fixed_days' || rule.type === 'working_days'">
-                                                <label class="form-label">天数</label>
-                                                <input type="number" class="form-control" v-model="rule.days" required min="1">
-                                            </div>
-                                            <div class="col-md-4" v-if="rule.type === 'specific_date'">
-                                                <label class="form-label">每月日期</label>
-                                                <input type="number" class="form-control" v-model="rule.dayOfMonth" required min="1" max="31">
-                                            </div>
-                                            <div class="col-md-4">
-                                                <label class="form-label">优先级</label>
-                                                <input type="number" class="form-control" v-model="rule.priority" required min="1">
-                                            </div>
-                                            <div class="col-md-2 align-self-end">
-                                                <button type="button" class="btn btn-outline-danger" @click="removeDeliveryRule(index)">删除</button>
+                                <div class="row mb-2">
+                                    <div class="col-sm-3">
+                                        <label class="form-label">交货日期规则</label>
+                                    </div>
+                                    <div class="col-sm-9">
+                                        <div v-for="(rule, index) in editingCustomer.deliveryRules" :key="index" class="border p-3 mb-2">
+                                            <div class="row mb-2">
+                                                <div class="col-md-4">
+                                                    <label class="form-label">规则类型</label>
+                                                    <select class="form-select" v-model="rule.type" required>
+                                                        <option value="fixed_days">固定天数</option>
+                                                        <option value="working_days">工作日计算</option>
+                                                        <option value="specific_date">特定日期</option>
+                                                    </select>
+                                                </div>
+                                                <div class="col-md-4" v-if="rule.type === 'fixed_days' || rule.type === 'working_days'">
+                                                    <label class="form-label">天数</label>
+                                                    <input type="number" class="form-control" v-model="rule.days" required min="1">
+                                                </div>
+                                                <div class="col-md-4" v-if="rule.type === 'specific_date'">
+                                                    <label class="form-label">每月日期</label>
+                                                    <input type="number" class="form-control" v-model="rule.dayOfMonth" required min="1" max="31">
+                                                </div>
+                                                <div class="col-md-4">
+                                                    <label class="form-label">优先级</label>
+                                                    <input type="number" class="form-control" v-model="rule.priority" required min="1">
+                                                </div>
+                                                <div class="col-md-2 align-self-end">
+                                                    <button type="button" class="btn btn-sm btn-outline-danger" @click="removeDeliveryRule(index)">删除</button>
+                                                </div>
                                             </div>
                                         </div>
+                                        <button type="button" class="btn btn-sm btn-outline-primary" @click="addDeliveryRule">添加规则</button>
                                     </div>
-                                    <button type="button" class="btn btn-outline-primary" @click="addDeliveryRule">添加规则</button>
                                 </div>
-                                <div class="text-end">
-                                    <button type="button" class="btn btn-secondary me-2" data-bs-dismiss="modal">取消</button>
-                                    <button type="submit" class="btn btn-primary">保存</button>
+                                <div class="text-end mt-3">
+                                    <button type="button" class="btn btn-sm btn-outline-secondary me-2" data-bs-dismiss="modal">取消</button>
+                                    <button type="submit" class="btn btn-sm btn-primary">保存</button>
                                 </div>
                             </form>
                         </div>
@@ -547,37 +655,45 @@ export default {
                             <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
                         </div>
                         <div class="modal-body">
-                            <form @submit.prevent="saveBom">
-                                <div class="mb-3">
-                                    <label class="form-label">产品</label>
-                                    <select class="form-select" v-model="editingBom.productId" required>
-                                        <option v-for="product in data.products" :key="product.id" :value="product.id">
-                                            {{ product.name }}
-                                        </option>
-                                    </select>
-                                </div>
-                                <div class="mb-3">
-                                    <label class="form-label">物料清单</label>
-                                    <div v-for="(item, index) in editingBom.items" :key="index" class="row mb-2">
-                                        <div class="col-6">
-                                            <select class="form-select" v-model="item.materialId" required>
-                                                <option v-for="material in data.materials" :key="material.id" :value="material.id">
-                                                    {{ material.name }}
-                                                </option>
-                                            </select>
-                                        </div>
-                                        <div class="col-4">
-                                            <input type="number" class="form-control" v-model="item.quantity" placeholder="数量" required min="1">
-                                        </div>
-                                        <div class="col-2">
-                                            <button type="button" class="btn btn-outline-danger" @click="removeBomItem(index)">删除</button>
-                                        </div>
+                            <form @submit.prevent="saveBom" class="form-compact">
+                                <div class="row mb-2">
+                                    <div class="col-sm-3">
+                                        <label class="form-label">产品 *</label>
                                     </div>
-                                    <button type="button" class="btn btn-outline-primary" @click="addBomItem">添加物料</button>
+                                    <div class="col-sm-9">
+                                        <select class="form-select" v-model="editingBom.productId" required>
+                                            <option v-for="product in data.products" :key="product.id" :value="product.id">
+                                                {{ product.name }}
+                                            </option>
+                                        </select>
+                                    </div>
                                 </div>
-                                <div class="text-end">
-                                    <button type="button" class="btn btn-secondary me-2" data-bs-dismiss="modal">取消</button>
-                                    <button type="submit" class="btn btn-primary">保存</button>
+                                <div class="row mb-2">
+                                    <div class="col-sm-3">
+                                        <label class="form-label">物料清单</label>
+                                    </div>
+                                    <div class="col-sm-9">
+                                        <div v-for="(item, index) in editingBom.items" :key="index" class="row mb-2">
+                                            <div class="col-6">
+                                                <select class="form-select" v-model="item.materialId" required>
+                                                    <option v-for="material in data.materials" :key="material.id" :value="material.id">
+                                                        {{ material.name }}
+                                                    </option>
+                                                </select>
+                                            </div>
+                                            <div class="col-4">
+                                                <input type="number" class="form-control" v-model="item.quantity" placeholder="数量" required min="1">
+                                            </div>
+                                            <div class="col-2">
+                                                <button type="button" class="btn btn-sm btn-outline-danger" @click="removeBomItem(index)">删除</button>
+                                            </div>
+                                        </div>
+                                        <button type="button" class="btn btn-sm btn-outline-primary" @click="addBomItem">添加物料</button>
+                                    </div>
+                                </div>
+                                <div class="text-end mt-3">
+                                    <button type="button" class="btn btn-sm btn-outline-secondary me-2" data-bs-dismiss="modal">取消</button>
+                                    <button type="submit" class="btn btn-sm btn-primary">保存</button>
                                 </div>
                             </form>
                         </div>
@@ -597,8 +713,8 @@ export default {
                             <p>{{ confirmMessage }}</p>
                         </div>
                         <div class="modal-footer">
-                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">取消</button>
-                            <button type="button" class="btn btn-danger" @click="executeDelete">确定删除</button>
+                            <button type="button" class="btn btn-sm btn-outline-secondary" data-bs-dismiss="modal">取消</button>
+                            <button type="button" class="btn btn-sm btn-danger" @click="executeDelete">确定删除</button>
                         </div>
                     </div>
                 </div>

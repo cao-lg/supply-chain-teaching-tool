@@ -1,9 +1,88 @@
 /**
  * 数据存储管理模块
  * 使用 LocalStorage 进行数据持久化
+ * 支持多用户数据隔离
  */
 
-const STORAGE_KEY = 'scm_data';
+const USER_ID_KEY = 'scm_user_id';
+const USER_INFO_KEY = 'scm_user_info';
+const USERS_KEY = 'scm_users';
+
+/**
+ * 生成唯一用户ID
+ * @returns {string} 用户ID
+ */
+const generateUserId = () => {
+    return 'user_' + Date.now().toString(36) + Math.random().toString(36).substr(2);
+};
+
+/**
+ * 生成用户编号
+ * @returns {string} 用户编号
+ */
+const generateUserCode = () => {
+    const users = getUsers();
+    return 'U' + String(users.length + 1).padStart(3, '0');
+};
+
+/**
+ * 保存用户信息
+ * @param {Array} users - 用户信息数组
+ */
+const saveUsers = (users) => {
+    try {
+        localStorage.setItem(USERS_KEY, JSON.stringify(users));
+    } catch (error) {
+        console.error('保存用户列表失败:', error);
+    }
+};
+
+/**
+ * 创建新用户
+ * @param {string} username - 用户名
+ * @returns {Object} 用户信息
+ */
+const createUser = (username) => {
+    const userId = generateUserId();
+    const userCode = generateUserCode();
+    const userInfo = {
+        id: userId,
+        code: userCode,
+        username: username,
+        createdAt: new Date().toISOString()
+    };
+    
+    const users = getUsers();
+    users.push(userInfo);
+    saveUsers(users);
+    
+    localStorage.setItem(USER_ID_KEY, userId);
+    localStorage.setItem(USER_INFO_KEY, JSON.stringify(userInfo));
+    
+    return userInfo;
+};
+
+/**
+ * 获取当前用户ID，如果不存在则生成新的
+ * @returns {string} 用户ID
+ */
+const getUserId = () => {
+    let userId = localStorage.getItem(USER_ID_KEY);
+    if (!userId) {
+        userId = generateUserId();
+        localStorage.setItem(USER_ID_KEY, userId);
+    }
+    return userId;
+};
+
+/**
+ * 获取当前用户的数据存储键
+ * @returns {string} 存储键
+ */
+const getStorageKey = () => {
+    const userId = getUserId();
+    return `scm_data_${userId}`;
+};
 
 /**
  * 获取默认数据结构
@@ -41,7 +120,8 @@ const getDefaultData = () => ({
  */
 export const loadData = () => {
     try {
-        const data = localStorage.getItem(STORAGE_KEY);
+        const storageKey = getStorageKey();
+        const data = localStorage.getItem(storageKey);
         return data ? JSON.parse(data) : getDefaultData();
     } catch (error) {
         console.error('加载数据失败:', error);
@@ -55,10 +135,27 @@ export const loadData = () => {
  */
 export const saveData = (data) => {
     try {
-        localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
+        const storageKey = getStorageKey();
+        localStorage.setItem(storageKey, JSON.stringify(data));
+        // 触发数据更新事件，通知其他标签页
+        window.dispatchEvent(new CustomEvent('data-updated'));
     } catch (error) {
         console.error('保存数据失败:', error);
     }
+};
+
+/**
+ * 初始化数据同步
+ */
+export const initDataSync = () => {
+    // 监听localStorage变化，实现不同浏览器标签页间的数据同步
+    window.addEventListener('storage', (event) => {
+        const storageKey = getStorageKey();
+        if (event.key === storageKey) {
+            // 数据发生变化，触发数据更新事件
+            window.dispatchEvent(new CustomEvent('data-updated'));
+        }
+    });
 };
 
 /**
@@ -66,9 +163,28 @@ export const saveData = (data) => {
  */
 export const clearData = () => {
     try {
-        localStorage.removeItem(STORAGE_KEY);
+        const storageKey = getStorageKey();
+        localStorage.removeItem(storageKey);
     } catch (error) {
         console.error('清空数据失败:', error);
+    }
+};
+
+/**
+ * 重置用户ID，创建新的用户数据空间
+ * @param {string} username - 用户名
+ * @returns {Object} 新用户信息
+ */
+export const resetUserId = (username = '新用户') => {
+    try {
+        // 创建新用户
+        const userInfo = createUser(username);
+        // 触发数据更新事件
+        window.dispatchEvent(new CustomEvent('data-updated'));
+        return userInfo;
+    } catch (error) {
+        console.error('重置用户ID失败:', error);
+        return null;
     }
 };
 
@@ -339,4 +455,53 @@ export const loadSampleData = () => {
  */
 export const generateId = () => {
     return Date.now().toString(36) + Math.random().toString(36).substr(2);
+};
+
+/**
+ * 获取当前用户信息
+ * @returns {Object} 用户信息
+ */
+export const getCurrentUser = () => {
+    try {
+        const userInfo = localStorage.getItem(USER_INFO_KEY);
+        return userInfo ? JSON.parse(userInfo) : null;
+    } catch (error) {
+        console.error('获取用户信息失败:', error);
+        return null;
+    }
+};
+
+/**
+ * 获取所有用户信息
+ * @returns {Array} 用户信息数组
+ */
+export const getUsers = () => {
+    try {
+        const users = localStorage.getItem(USERS_KEY);
+        return users ? JSON.parse(users) : [];
+    } catch (error) {
+        console.error('获取用户列表失败:', error);
+        return [];
+    }
+};
+
+/**
+ * 设置当前用户
+ * @param {string} userId - 用户ID
+ * @returns {Object} 用户信息
+ */
+export const setCurrentUser = (userId) => {
+    try {
+        const users = getUsers();
+        const userInfo = users.find(user => user.id === userId);
+        if (userInfo) {
+            localStorage.setItem(USER_ID_KEY, userId);
+            localStorage.setItem(USER_INFO_KEY, JSON.stringify(userInfo));
+            return userInfo;
+        }
+        return null;
+    } catch (error) {
+        console.error('设置用户失败:', error);
+        return null;
+    }
 };

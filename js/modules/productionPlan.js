@@ -20,7 +20,7 @@ export default {
                     <a class="nav-link" :class="{ active: activeTab === 'orders' }" @click="activeTab = 'orders'">订单管理</a>
                 </li>
                 <li class="nav-item">
-                    <a class="nav-link" :class="{ active: activeTab === 'plans' }" @click="activeTab = 'plans'; initGanttChart();">生产计划总表</a>
+                    <a class="nav-link" :class="{ active: activeTab === 'plans' }" @click="switchToPlans()">生产计划总表</a>
                 </li>
             </ul>
 
@@ -76,7 +76,7 @@ export default {
                                 </td>
                                 <td>
                                     <button class="btn btn-sm btn-outline-primary" @click="openOrderModal(item)">编辑</button>
-                                    <button class="btn btn-sm btn-outline-success" @click="generatePlan(item)" v-if="item.status === '待处理'">生成计划</button>
+                                    <button class="btn btn-sm btn-outline-success" @click="generatePlan(item)" v-if="item.status === '待处理' || item.status === 'pending'">生成计划</button>
                                     <button class="btn btn-sm btn-outline-danger" @click="deleteOrder(item.id)">删除</button>
                                 </td>
                             </tr>
@@ -210,8 +210,20 @@ export default {
                 <!-- 甘特图 -->
                 <div class="card">
                     <div class="card-body">
-                        <h5 class="card-title">生产排产甘特图</h5>
-                        <div id="ganttChart" class="chart-container"></div>
+                        <div class="d-flex justify-content-between align-items-center mb-4">
+                            <h5 class="card-title mb-0">生产排产甘特图</h5>
+                            <div class="d-flex gap-2">
+                                <select class="form-select form-select-sm" v-model="filterProduct" @change="initGanttChart">
+                                    <option value="">全部产品</option>
+                                    <option v-for="product in data.products" :key="product.id" :value="product.id">{{ product.name }}</option>
+                                </select>
+                                <select class="form-select form-select-sm" v-model="filterEquipment" @change="initGanttChart">
+                                    <option value="">全部设备</option>
+                                    <option v-for="equipment in data.equipment" :key="equipment.id" :value="equipment.id">{{ equipment.name }}</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div id="ganttChart" class="chart-container" style="height: 400px;"></div>
                     </div>
                 </div>
             </div>
@@ -225,61 +237,67 @@ export default {
                             <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
                         </div>
                         <div class="modal-body">
-                            <form @submit.prevent="saveNewPlan">
-                                <div class="row">
-                                    <div class="col-md-6">
-                                        <div class="mb-3">
-                                            <label class="form-label">产品</label>
-                                            <select class="form-select" v-model="addingPlan.productId" required>
-                                                <option value="">请选择产品</option>
-                                                <option v-for="product in data.products" :key="product.id" :value="product.id">
-                                                    {{ product.name }}
-                                                </option>
-                                            </select>
-                                        </div>
+                            <form @submit.prevent="saveNewPlan" class="form-compact">
+                                <div class="row mb-2">
+                                    <div class="col-sm-3">
+                                        <label class="form-label">产品 *</label>
                                     </div>
-                                    <div class="col-md-6">
-                                        <div class="mb-3">
-                                            <label class="form-label">数量</label>
-                                            <input type="number" class="form-control" v-model.number="addingPlan.quantity" min="1" required>
-                                        </div>
+                                    <div class="col-sm-9">
+                                        <select class="form-select" v-model="addingPlan.productId" required>
+                                            <option value="">请选择产品</option>
+                                            <option v-for="product in data.products" :key="product.id" :value="product.id">
+                                                {{ product.name }}
+                                            </option>
+                                        </select>
                                     </div>
                                 </div>
-                                <div class="row">
-                                    <div class="col-md-6">
-                                        <div class="mb-3">
-                                            <label class="form-label">开始日期</label>
-                                            <input type="date" class="form-control" v-model="addingPlan.startDate" required>
-                                        </div>
+                                <div class="row mb-2">
+                                    <div class="col-sm-3">
+                                        <label class="form-label">数量 *</label>
                                     </div>
-                                    <div class="col-md-6">
-                                        <div class="mb-3">
-                                            <label class="form-label">结束日期</label>
-                                            <input type="date" class="form-control" v-model="addingPlan.endDate" required>
-                                        </div>
+                                    <div class="col-sm-9">
+                                        <input type="number" class="form-control" v-model.number="addingPlan.quantity" min="1" required>
                                     </div>
                                 </div>
-                                <div class="row">
-                                    <div class="col-md-6">
-                                        <div class="mb-3">
-                                            <label class="form-label">优先级</label>
-                                            <select class="form-select" v-model="addingPlan.priority">
-                                                <option value="普通">普通</option>
-                                                <option value="重要">重要</option>
-                                                <option value="紧急">紧急</option>
-                                            </select>
-                                        </div>
+                                <div class="row mb-2">
+                                    <div class="col-sm-3">
+                                        <label class="form-label">开始日期 *</label>
                                     </div>
-                                    <div class="col-md-6">
-                                        <div class="mb-3">
-                                            <label class="form-label">分配设备</label>
-                                            <select class="form-select" v-model="addingPlan.equipmentId">
-                                                <option value="">请选择设备</option>
-                                                <option v-for="eq in data.equipment" :key="eq.id" :value="eq.id">
-                                                    {{ eq.name }} ({{ eq.capacityPerDay }}个/天)
-                                                </option>
-                                            </select>
-                                        </div>
+                                    <div class="col-sm-9">
+                                        <input type="date" class="form-control" v-model="addingPlan.startDate" required>
+                                    </div>
+                                </div>
+                                <div class="row mb-2">
+                                    <div class="col-sm-3">
+                                        <label class="form-label">结束日期 *</label>
+                                    </div>
+                                    <div class="col-sm-9">
+                                        <input type="date" class="form-control" v-model="addingPlan.endDate" required>
+                                    </div>
+                                </div>
+                                <div class="row mb-2">
+                                    <div class="col-sm-3">
+                                        <label class="form-label">优先级</label>
+                                    </div>
+                                    <div class="col-sm-9">
+                                        <select class="form-select" v-model="addingPlan.priority">
+                                            <option value="普通">普通</option>
+                                            <option value="重要">重要</option>
+                                            <option value="紧急">紧急</option>
+                                        </select>
+                                    </div>
+                                </div>
+                                <div class="row mb-2">
+                                    <div class="col-sm-3">
+                                        <label class="form-label">分配设备</label>
+                                    </div>
+                                    <div class="col-sm-9">
+                                        <select class="form-select" v-model="addingPlan.equipmentId">
+                                            <option value="">请选择设备</option>
+                                            <option v-for="eq in data.equipment" :key="eq.id" :value="eq.id">
+                                                {{ eq.name }} ({{ eq.capacityPerDay }}个/天)
+                                            </option>
+                                        </select>
                                     </div>
                                 </div>
                                 
@@ -313,8 +331,8 @@ export default {
                                 </div>
                                 
                                 <div class="text-end mt-3">
-                                    <button type="button" class="btn btn-secondary me-2" data-bs-dismiss="modal">取消</button>
-                                    <button type="submit" class="btn btn-primary">保存</button>
+                                    <button type="button" class="btn btn-sm btn-outline-secondary me-2" data-bs-dismiss="modal">取消</button>
+                                    <button type="submit" class="btn btn-sm btn-primary">保存</button>
                                 </div>
                             </form>
                         </div>
@@ -331,63 +349,99 @@ export default {
                             <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
                         </div>
                         <div class="modal-body">
-                            <form @submit.prevent="saveOrder">
-                                <div class="mb-3">
-                                    <label class="form-label">订单编号</label>
-                                    <input type="text" class="form-control" v-model="editingOrder.orderNo" required>
+                            <form @submit.prevent="saveOrder" class="form-compact">
+                                <div class="row mb-2">
+                                    <div class="col-sm-3">
+                                        <label class="form-label">订单编号 *</label>
+                                    </div>
+                                    <div class="col-sm-9">
+                                        <input type="text" class="form-control" v-model="editingOrder.orderNo" required>
+                                    </div>
                                 </div>
-                                <div class="mb-3">
-                                    <label class="form-label">客户</label>
-                                    <select class="form-select" v-model="editingOrder.customerId" @change="calculateDeliveryDate" required>
-                                        <option value="">请选择客户</option>
-                                        <option v-for="customer in data.customers" :key="customer.id" :value="customer.id">
-                                            {{ customer.name }}
-                                        </option>
-                                    </select>
+                                <div class="row mb-2">
+                                    <div class="col-sm-3">
+                                        <label class="form-label">客户 *</label>
+                                    </div>
+                                    <div class="col-sm-9">
+                                        <select class="form-select" v-model="editingOrder.customerId" @change="calculateDeliveryDate" required>
+                                            <option value="">请选择客户</option>
+                                            <option v-for="customer in data.customers" :key="customer.id" :value="customer.id">
+                                                {{ customer.name }}
+                                            </option>
+                                        </select>
+                                    </div>
                                 </div>
-                                <div class="mb-3">
-                                    <label class="form-label">产品</label>
-                                    <select class="form-select" v-model="editingOrder.productId" required>
-                                        <option v-for="product in data.products" :key="product.id" :value="product.id">
-                                            {{ product.name }}
-                                        </option>
-                                    </select>
+                                <div class="row mb-2">
+                                    <div class="col-sm-3">
+                                        <label class="form-label">产品 *</label>
+                                    </div>
+                                    <div class="col-sm-9">
+                                        <select class="form-select" v-model="editingOrder.productId" required>
+                                            <option v-for="product in data.products" :key="product.id" :value="product.id">
+                                                {{ product.name }}
+                                            </option>
+                                        </select>
+                                    </div>
                                 </div>
-                                <div class="mb-3">
-                                    <label class="form-label">数量</label>
-                                    <input type="number" class="form-control" v-model="editingOrder.quantity" required min="1">
+                                <div class="row mb-2">
+                                    <div class="col-sm-3">
+                                        <label class="form-label">数量 *</label>
+                                    </div>
+                                    <div class="col-sm-9">
+                                        <input type="number" class="form-control" v-model="editingOrder.quantity" required min="1">
+                                    </div>
                                 </div>
-                                <div class="mb-3">
-                                    <label class="form-label">交货日期</label>
-                                    <input type="date" class="form-control" v-model="editingOrder.deliveryDate" @change="recordDeliveryDateAdjustment" required>
+                                <div class="row mb-2">
+                                    <div class="col-sm-3">
+                                        <label class="form-label">交货日期 *</label>
+                                    </div>
+                                    <div class="col-sm-9">
+                                        <input type="date" class="form-control" v-model="editingOrder.deliveryDate" @change="recordDeliveryDateAdjustment" required>
+                                    </div>
                                 </div>
-                                <div class="mb-3">
-                                    <label class="form-label">交货日期调整原因</label>
-                                    <textarea class="form-control" v-model="editingOrder.deliveryDateAdjustmentReason" rows="2"></textarea>
+                                <div class="row mb-2">
+                                    <div class="col-sm-3">
+                                        <label class="form-label">调整原因</label>
+                                    </div>
+                                    <div class="col-sm-9">
+                                        <textarea class="form-control" v-model="editingOrder.deliveryDateAdjustmentReason" rows="2"></textarea>
+                                    </div>
                                 </div>
-                                <div class="mb-3" v-if="editingOrder.deliveryDateCalculation">
-                                    <label class="form-label">交货日期计算依据</label>
-                                    <input type="text" class="form-control" v-model="editingOrder.deliveryDateCalculation" readonly>
+                                <div class="row mb-2" v-if="editingOrder.deliveryDateCalculation">
+                                    <div class="col-sm-3">
+                                        <label class="form-label">计算依据</label>
+                                    </div>
+                                    <div class="col-sm-9">
+                                        <input type="text" class="form-control" v-model="editingOrder.deliveryDateCalculation" readonly>
+                                    </div>
                                 </div>
-                                <div class="mb-3">
-                                    <label class="form-label">优先级</label>
-                                    <select class="form-select" v-model="editingOrder.priority">
-                                        <option value="普通">普通</option>
-                                        <option value="重要">重要</option>
-                                        <option value="紧急">紧急</option>
-                                    </select>
+                                <div class="row mb-2">
+                                    <div class="col-sm-3">
+                                        <label class="form-label">优先级</label>
+                                    </div>
+                                    <div class="col-sm-9">
+                                        <select class="form-select" v-model="editingOrder.priority">
+                                            <option value="普通">普通</option>
+                                            <option value="重要">重要</option>
+                                            <option value="紧急">紧急</option>
+                                        </select>
+                                    </div>
                                 </div>
-                                <div class="mb-3">
-                                    <label class="form-label">状态</label>
-                                    <select class="form-select" v-model="editingOrder.status">
-                                        <option value="待处理">待处理</option>
-                                        <option value="进行中">进行中</option>
-                                        <option value="已完成">已完成</option>
-                                    </select>
+                                <div class="row mb-2">
+                                    <div class="col-sm-3">
+                                        <label class="form-label">状态</label>
+                                    </div>
+                                    <div class="col-sm-9">
+                                        <select class="form-select" v-model="editingOrder.status">
+                                            <option value="待处理">待处理</option>
+                                            <option value="进行中">进行中</option>
+                                            <option value="已完成">已完成</option>
+                                        </select>
+                                    </div>
                                 </div>
-                                <div class="text-end">
-                                    <button type="button" class="btn btn-secondary me-2" data-bs-dismiss="modal">取消</button>
-                                    <button type="submit" class="btn btn-primary">保存</button>
+                                <div class="text-end mt-3">
+                                    <button type="button" class="btn btn-sm btn-outline-secondary me-2" data-bs-dismiss="modal">取消</button>
+                                    <button type="submit" class="btn btn-sm btn-primary">保存</button>
                                 </div>
                             </form>
                         </div>
@@ -404,18 +458,22 @@ export default {
                             <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
                         </div>
                         <div class="modal-body">
-                            <form @submit.prevent="savePlan">
-                                <div class="mb-3">
-                                    <label class="form-label">状态</label>
-                                    <select class="form-select" v-model="editingPlan.status">
-                                        <option value="待处理">待处理</option>
-                                        <option value="进行中">进行中</option>
-                                        <option value="已完成">已完成</option>
-                                    </select>
+                            <form @submit.prevent="savePlan" class="form-compact">
+                                <div class="row mb-2">
+                                    <div class="col-sm-3">
+                                        <label class="form-label">状态</label>
+                                    </div>
+                                    <div class="col-sm-9">
+                                        <select class="form-select" v-model="editingPlan.status">
+                                            <option value="待处理">待处理</option>
+                                            <option value="进行中">进行中</option>
+                                            <option value="已完成">已完成</option>
+                                        </select>
+                                    </div>
                                 </div>
-                                <div class="text-end">
-                                    <button type="button" class="btn btn-secondary me-2" data-bs-dismiss="modal">取消</button>
-                                    <button type="submit" class="btn btn-primary">保存</button>
+                                <div class="text-end mt-3">
+                                    <button type="button" class="btn btn-sm btn-outline-secondary me-2" data-bs-dismiss="modal">取消</button>
+                                    <button type="submit" class="btn btn-sm btn-primary">保存</button>
                                 </div>
                             </form>
                         </div>
@@ -432,36 +490,54 @@ export default {
                             <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
                         </div>
                         <div class="modal-body">
-                            <div class="mb-3">
-                                <label class="form-label">工单编号</label>
-                                <input type="text" class="form-control" :value="completionPlan?.id" readonly>
-                            </div>
-                            <div class="mb-3">
-                                <label class="form-label">产品</label>
-                                <input type="text" class="form-control" :value="getProductName(completionPlan?.productId)" readonly>
-                            </div>
-                            <div class="mb-3">
-                                <label class="form-label">计划数量</label>
-                                <input type="number" class="form-control" :value="completionPlan?.quantity" readonly>
-                            </div>
-                            <div class="mb-3">
-                                <label class="form-label">入库数量</label>
-                                <input type="number" class="form-control" v-model.number="completionQuantity" min="1" required>
-                            </div>
-                            <div class="alert alert-info" v-if="bomNotFound">
-                                <strong>提示：</strong>未找到该产品的BOM清单，将直接增加产品库存而不扣减物料。
-                            </div>
-                            <div class="text-end">
-                                <button type="button" class="btn btn-secondary me-2" data-bs-dismiss="modal">取消</button>
-                                <button type="button" class="btn btn-primary" @click="confirmProductionCompletion">确认入库</button>
-                            </div>
+                            <form class="form-compact">
+                                <div class="row mb-2">
+                                    <div class="col-sm-3">
+                                        <label class="form-label">工单编号</label>
+                                    </div>
+                                    <div class="col-sm-9">
+                                        <input type="text" class="form-control" :value="completionPlan?.id" readonly>
+                                    </div>
+                                </div>
+                                <div class="row mb-2">
+                                    <div class="col-sm-3">
+                                        <label class="form-label">产品</label>
+                                    </div>
+                                    <div class="col-sm-9">
+                                        <input type="text" class="form-control" :value="getProductName(completionPlan?.productId)" readonly>
+                                    </div>
+                                </div>
+                                <div class="row mb-2">
+                                    <div class="col-sm-3">
+                                        <label class="form-label">计划数量</label>
+                                    </div>
+                                    <div class="col-sm-9">
+                                        <input type="number" class="form-control" :value="completionPlan?.quantity" readonly>
+                                    </div>
+                                </div>
+                                <div class="row mb-2">
+                                    <div class="col-sm-3">
+                                        <label class="form-label">入库数量 *</label>
+                                    </div>
+                                    <div class="col-sm-9">
+                                        <input type="number" class="form-control" v-model.number="completionQuantity" min="1" required>
+                                    </div>
+                                </div>
+                                <div class="alert alert-info" v-if="bomNotFound">
+                                    <strong>提示：</strong>未找到该产品的BOM清单，将直接增加产品库存而不扣减物料。
+                                </div>
+                                <div class="text-end mt-3">
+                                    <button type="button" class="btn btn-sm btn-outline-secondary me-2" data-bs-dismiss="modal">取消</button>
+                                    <button type="button" class="btn btn-sm btn-primary" @click="confirmProductionCompletion">确认入库</button>
+                                </div>
+                            </form>
                         </div>
                     </div>
                 </div>
             </div>
 
-            <!-- 确认删除模态框 -->
-            <div class="modal fade" id="confirmDeleteModal" tabindex="-1" ref="confirmDeleteModal">
+            <!-- 确认操作模态框 -->
+            <div class="modal fade" id="confirmModal" tabindex="-1" ref="confirmModal">
                 <div class="modal-dialog modal-dialog-centered">
                     <div class="modal-content">
                         <div class="modal-header bg-danger text-white">
@@ -472,12 +548,14 @@ export default {
                             <p>{{ confirmMessage }}</p>
                         </div>
                         <div class="modal-footer">
-                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">取消</button>
-                            <button type="button" class="btn btn-danger" @click="executeConfirm">确定</button>
+                            <button type="button" class="btn btn-sm btn-outline-secondary" data-bs-dismiss="modal">取消</button>
+                            <button type="button" class="btn btn-sm btn-danger" @click="executeConfirm">确定</button>
                         </div>
                     </div>
                 </div>
             </div>
+
+
         </div>
     `,
     data() {
@@ -501,7 +579,9 @@ export default {
                 workers: []
             },
             confirmMessage: '',
-            pendingConfirmCallback: null
+            pendingCallback: null,
+            filterProduct: '',
+            filterEquipment: ''
         };
     },
     computed: {
@@ -605,6 +685,16 @@ export default {
          */
         goToBasicData(tab) {
             window.dispatchEvent(new CustomEvent('switch-page', { detail: { page: 1, tab: tab } }));
+        },
+        
+        /**
+         * 切换到生产计划总表标签
+         */
+        switchToPlans() {
+            this.activeTab = 'plans';
+            this.$nextTick(() => {
+                this.initGanttChart();
+            });
         },
         
         /**
@@ -786,9 +876,15 @@ export default {
          */
         getStatusBadgeClass(status) {
             switch (status) {
-                case '待处理': return 'bg-secondary';
-                case '进行中': return 'bg-warning';
-                case '已完成': return 'bg-success';
+                case '待处理':
+                case 'pending':
+                    return 'bg-secondary';
+                case '进行中':
+                case 'in_progress':
+                    return 'bg-warning';
+                case '已完成':
+                case 'completed':
+                    return 'bg-success';
                 default: return 'bg-secondary';
             }
         },
@@ -937,12 +1033,35 @@ export default {
          * @param {string} id - 订单ID
          */
         deleteOrder(id) {
-            this.showConfirm('确定要删除这个订单吗？', () => {
+            this.confirmAction('确定要删除这个订单吗？', () => {
                 this.data.orders = this.data.orders.filter(o => o.id !== id);
                 saveData(this.data);
+                window.showToast('success', '删除成功', '订单已删除');
             });
         },
 
+        /**
+         * 显示确认操作弹窗
+         * @param {string} message - 确认消息
+         * @param {Function} callback - 确认后的回调函数
+         */
+        confirmAction(message, callback) {
+            this.confirmMessage = message;
+            this.pendingCallback = callback;
+            new bootstrap.Modal(this.$refs.confirmModal).show();
+        },
+        
+        /**
+         * 执行确认操作
+         */
+        executeConfirm() {
+            if (this.pendingCallback) {
+                this.pendingCallback();
+                this.pendingCallback = null;
+            }
+            bootstrap.Modal.getInstance(this.$refs.confirmModal).hide();
+        },
+        
         /**
          * 生成生产计划
          * @param {Object} order - 订单对象
@@ -956,15 +1075,17 @@ export default {
 
             // 检查资源冲突
             const conflictingPlans = this.getConflictingPlans(startDate, deliveryDate);
+            let confirmMsg;
+            
             if (conflictingPlans.length > 0) {
-                const confirmMsg = `检测到资源冲突！\n\n与以下生产计划时间重叠：\n${conflictingPlans.map(p => `- ${this.getProductName(p.productId)} (${p.startDate} ~ ${p.endDate})`).join('\n')}\n\n是否仍要创建生产计划？`;
-                this.showConfirm(confirmMsg, () => {
-                    this.createProductionPlan(order, startDate);
-                });
-                return;
+                confirmMsg = `检测到资源冲突！\n\n与以下生产计划时间重叠：\n${conflictingPlans.map(p => `- ${this.getProductName(p.productId)} (${p.startDate} ~ ${p.endDate})`).join('\n')}\n\n是否仍要创建生产计划？`;
+            } else {
+                confirmMsg = `确定要为订单 ${order.orderNo} 创建生产计划吗？\n\n开始日期：${startDate.toISOString().split('T')[0]}\n结束日期：${order.deliveryDate}`;
             }
-
-            this.createProductionPlan(order, startDate);
+            
+            this.confirmAction(confirmMsg, () => {
+                this.createProductionPlan(order, startDate);
+            });
         },
 
         /**
@@ -988,7 +1109,7 @@ export default {
             this.data.productionPlans.push(plan);
             order.status = '进行中';
             saveData(this.data);
-            alert('生产计划生成成功！');
+            window.showToast('success', '生成成功', '生产计划已生成');
         },
 
         /**
@@ -1047,13 +1168,13 @@ export default {
          * 删除生产计划
          * @param {string} id - 生产计划ID
          */
-        async deletePlan(id) {
-            if (await window.confirmAction('确定要删除这个生产计划吗？此操作不可撤销。')) {
+        deletePlan(id) {
+            this.confirmAction('确定要删除这个生产计划吗？此操作不可撤销。', () => {
                 this.data.productionPlans = this.data.productionPlans.filter(p => p.id !== id);
                 saveData(this.data);
                 this.initGanttChart();
                 window.showToast('success', '删除成功', '生产计划已删除');
-            }
+            });
         },
 
         /**
@@ -1062,15 +1183,35 @@ export default {
         initGanttChart() {
             this.refreshData();
             
+            console.log('开始初始化甘特图');
+            
             const chartDom = document.getElementById('ganttChart');
-            if (!chartDom) return;
+            console.log('甘特图容器:', chartDom);
+            
+            if (!chartDom) {
+                console.log('甘特图容器不存在');
+                return;
+            }
 
             const chart = echarts.init(chartDom);
+            console.log('ECharts实例:', chart);
             
-            if (this.data.productionPlans.length === 0) {
+            // 过滤生产计划数据
+            let filteredPlans = this.data.productionPlans;
+            if (this.filterProduct) {
+                filteredPlans = filteredPlans.filter(plan => plan.productId === this.filterProduct);
+            }
+            if (this.filterEquipment) {
+                filteredPlans = filteredPlans.filter(plan => plan.equipmentId === this.filterEquipment);
+            }
+            
+            console.log('过滤后的生产计划数据:', filteredPlans);
+            
+            if (filteredPlans.length === 0) {
+                console.log('没有符合条件的生产计划数据');
                 chart.setOption({
                     title: {
-                        text: '暂无生产计划数据',
+                        text: '暂无符合条件的生产计划数据',
                         left: 'center',
                         top: 'center',
                         textStyle: {
@@ -1082,88 +1223,141 @@ export default {
                 return;
             }
 
-            const products = [...new Set(this.data.productionPlans.map(p => this.getProductName(p.productId)))];
-            const minDate = new Date(Math.min(...this.data.productionPlans.map(p => new Date(p.startDate).getTime())));
-            const maxDate = new Date(Math.max(...this.data.productionPlans.map(p => new Date(p.endDate).getTime())));
+            // 准备数据
+            console.log('准备甘特图数据');
+            const seriesData = [];
+            const yAxisData = [];
+            const productEquipmentMap = {};
             
-            minDate.setDate(minDate.getDate() - 3);
-            maxDate.setDate(maxDate.getDate() + 3);
-
-            const seriesData = this.data.productionPlans.map((plan, index) => {
-                const product = this.getProductName(plan.productId);
-                const statusColor = plan.status === '已完成' ? '#52c41a' : 
-                                    plan.status === '进行中' ? '#faad14' : '#1890ff';
+            // 设备颜色映射
+            const equipmentColors = {
+                '1号电子组装线': '#1890ff',
+                '2号电子组装线': '#52c41a',
+                'SMT贴片机A': '#faad14',
+                '测试设备1': '#f5222d',
+                '测试设备2': '#722ed1',
+                '包装线A': '#13c2c2',
+                '无设备': '#8c8c8c'
+            };
+            
+            // 按产品和设备组织数据
+            filteredPlans.forEach((plan, index) => {
+                const productName = this.getProductName(plan.productId);
+                const equipmentName = this.getEquipmentName(plan.equipmentId);
+                const key = `${productName} - ${equipmentName || '无设备'}`;
                 
-                return {
-                    name: product,
-                    value: [index, plan.startDate, plan.endDate, plan.quantity, plan.planNo || plan.id],
-                    itemStyle: { color: statusColor }
-                };
+                console.log('处理计划:', plan.planNo, productName, equipmentName);
+                
+                if (!productEquipmentMap[key]) {
+                    productEquipmentMap[key] = yAxisData.length;
+                    yAxisData.push(key);
+                }
+                
+                // 根据设备获取颜色
+                let equipmentColor = equipmentColors[equipmentName] || '#8c8c8c';
+                
+                // 根据状态调整颜色透明度
+                const statusOpacity = plan.status === '已完成' || plan.status === 'completed' ? 0.6 : 
+                                    plan.status === '进行中' || plan.status === 'in_progress' ? 1 : 0.8;
+                
+                seriesData.push({
+                    name: productName,
+                    equipmentName: equipmentName || '无设备',
+                    planNo: plan.planNo || plan.id,
+                    workHours: this.calculateWorkHours(plan),
+                    equipmentUsage: this.calculateEquipmentUsage(plan),
+                    // 计算人工工时和设备工时
+                    laborHours: this.calculateWorkHours(plan), // 假设人工工时与总工时相同
+                    equipmentHours: this.calculateWorkHours(plan), // 假设设备工时与总工时相同
+                    value: [
+                        productEquipmentMap[key],
+                        plan.startDate,
+                        plan.endDate
+                    ],
+                    itemStyle: { 
+                        color: equipmentColor,
+                        opacity: statusOpacity
+                    }
+                });
             });
 
-            chart.setOption({
+            console.log('yAxisData:', yAxisData);
+            console.log('seriesData:', seriesData);
+
+            // 甘特图配置
+            const option = {
+                title: {
+                    text: '生产排产甘特图',
+                    left: 'center'
+                },
                 tooltip: {
                     trigger: 'item',
-                    formatter: (params) => {
-                        const plan = this.data.productionPlans[params.value[0]];
-                        return `<strong>${params.name}</strong><br/>
-                                计划编号: ${plan.planNo || plan.id}<br/>
-                                开始: ${params.value[1]}<br/>
-                                结束: ${params.value[2]}<br/>
-                                数量: ${params.value[3]}<br/>
-                                状态: ${plan.status}`;
+                    formatter: function(params) {
+                        return `计划编号: ${params.data.planNo}<br/>` +
+                               `产品: ${params.data.name}<br/>` +
+                               `设备: ${params.data.equipmentName}<br/>` +
+                               `开始: ${params.value[1]}<br/>` +
+                               `结束: ${params.value[2]}<br/>` +
+                               `总工时: ${params.data.workHours.toFixed(1)}h<br/>` +
+                               `人工工时: ${params.data.laborHours.toFixed(1)}h<br/>` +
+                               `设备工时: ${params.data.equipmentHours.toFixed(1)}h<br/>` +
+                               `设备利用率: ${params.data.equipmentUsage}%`;
                     }
                 },
                 grid: {
                     left: '15%',
                     right: '10%',
-                    top: '10%',
-                    bottom: '15%'
+                    top: '15%',
+                    bottom: '10%'
                 },
                 xAxis: {
-                    type: 'time',
-                    min: minDate.toISOString().split('T')[0],
-                    max: maxDate.toISOString().split('T')[0],
-                    axisLabel: {
-                        formatter: (value) => {
-                            const date = new Date(value);
-                            return `${date.getMonth()+1}/${date.getDate()}`;
-                        }
-                    }
+                    type: 'time'
                 },
                 yAxis: {
                     type: 'category',
-                    data: this.data.productionPlans.map(p => this.getProductName(p.productId)),
-                    inverse: true
+                    data: yAxisData,
+                    axisLabel: {
+                        interval: 0,
+                        rotate: 30,
+                        fontSize: 12
+                    }
                 },
                 series: [{
                     type: 'custom',
-                    renderItem: (params, api) => {
+                    renderItem: function(params, api) {
                         const categoryIndex = api.value(0);
                         const start = api.coord([api.value(1), categoryIndex]);
                         const end = api.coord([api.value(2), categoryIndex]);
-                        const height = 20;
+                        const height = Math.min(20, 400 / yAxisData.length); // 动态调整高度，确保在数据多时也能正常显示
                         
                         return {
                             type: 'rect',
                             shape: {
                                 x: start[0],
                                 y: start[1] - height / 2,
-                                width: Math.max(end[0] - start[0], 1),
+                                width: end[0] - start[0],
                                 height: height
                             },
-                            style: api.style({
-                                fill: api.visual('color')
-                            })
+                            style: api.style()
                         };
                     },
                     encode: {
                         x: [1, 2],
                         y: 0
                     },
-                    data: seriesData
+                    data: seriesData,
+                    animation: false // 禁用动画，提高性能
                 }]
+            };
+            
+            // 响应式设计
+            window.addEventListener('resize', function() {
+                chart.resize();
             });
+
+            console.log('设置ECharts配置');
+            chart.setOption(option);
+            console.log('甘特图初始化完成');
         },
 
         /**
