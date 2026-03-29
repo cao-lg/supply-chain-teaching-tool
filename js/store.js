@@ -181,9 +181,99 @@ export const loadSampleData = () => {
                 ]
             }
         ],
-        orders: [],
-        productionPlans: [],
-        purchaseOrders: [],
+        orders: [
+            {
+                id: 'o1',
+                orderNo: 'SO-20260320-001',
+                customerId: 'c1',
+                productId: 'p1',
+                quantity: 5,
+                deliveryDate: '2026-03-25',
+                status: 'completed',
+                priority: '普通'
+            },
+            {
+                id: 'o2',
+                orderNo: 'SO-20260328-001',
+                customerId: 'c2',
+                productId: 'p1',
+                quantity: 10,
+                deliveryDate: '2026-04-05',
+                status: 'pending',
+                priority: '重要'
+            },
+            {
+                id: 'o3',
+                orderNo: 'SO-20260328-002',
+                customerId: 'c3',
+                productId: 'p2',
+                quantity: 20,
+                deliveryDate: '2026-04-10',
+                status: 'pending',
+                priority: '普通'
+            }
+        ],
+        productionPlans: [
+            {
+                id: 'pp1',
+                planNo: 'PP-20260315-001',
+                productId: 'p1',
+                quantity: 10,
+                startDate: '2026-03-15',
+                endDate: '2026-03-20',
+                status: 'completed',
+                priority: '重要'
+            },
+            {
+                id: 'pp2',
+                planNo: 'PP-20260325-001',
+                productId: 'p1',
+                quantity: 15,
+                startDate: '2026-03-25',
+                endDate: '2026-04-01',
+                status: 'in_progress',
+                priority: '紧急'
+            }
+        ],
+        purchaseOrders: [
+            {
+                id: 'po1',
+                orderNo: 'PO-20260301-001',
+                supplierId: 's1',
+                items: [
+                    { materialId: 'm1', quantity: 50, price: 50 }
+                ],
+                orderDate: '2026-03-01',
+                expectedDate: '2026-03-05',
+                status: 'completed',
+                totalAmount: 2500
+            },
+            {
+                id: 'po2',
+                orderNo: 'PO-20260328-001',
+                supplierId: 's1',
+                items: [
+                    { materialId: 'm1', quantity: 30, price: 50 },
+                    { materialId: 'm2', quantity: 20, price: 120 }
+                ],
+                orderDate: '2026-03-28',
+                expectedDate: '2026-04-03',
+                status: 'pending',
+                totalAmount: 3900
+            },
+            {
+                id: 'po3',
+                orderNo: 'PO-20260328-002',
+                supplierId: 's2',
+                items: [
+                    { materialId: 'm3', quantity: 100, price: 15 }
+                ],
+                orderDate: '2026-03-28',
+                expectedDate: '2026-04-02',
+                status: 'in_progress',
+                totalAmount: 1500
+            }
+        ],
         inventory: {
             materials: [
                 { materialId: 'm1', quantity: 100, safeStock: 20 },
