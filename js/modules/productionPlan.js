@@ -20,7 +20,7 @@ export default {
                     <a class="nav-link" :class="{ active: activeTab === 'orders' }" @click="activeTab = 'orders'">订单管理</a>
                 </li>
                 <li class="nav-item">
-                    <a class="nav-link" :class="{ active: activeTab === 'plans' }" @click="activeTab = 'plans'; initGanttChart();">生产计划</a>
+                    <a class="nav-link" :class="{ active: activeTab === 'plans' }" @click="activeTab = 'plans'; initGanttChart();">生产计划总表</a>
                 </li>
             </ul>
 
@@ -44,7 +44,19 @@ export default {
                             </tr>
                         </thead>
                         <tbody>
-                            <tr v-for="item in data.orders" :key="item.id">
+                            <tr v-if="data.orders.length === 0">
+                                <td colspan="7" class="text-center py-5">
+                                    <div class="text-muted">
+                                        <i class="fas fa-clipboard-list fa-3x mb-3 d-block"></i>
+                                        <h5>暂无订单数据</h5>
+                                        <p class="mb-3">点击下方按钮创建第一个订单</p>
+                                        <button class="btn btn-primary" @click="openOrderModal()">
+                                            <i class="fas fa-plus"></i> 添加订单
+                                        </button>
+                                    </div>
+                                </td>
+                            </tr>
+                            <tr v-else v-for="item in data.orders" :key="item.id">
                                 <td>{{ item.orderNo }}</td>
                                 <td>{{ getProductName(item.productId) }}</td>
                                 <td>{{ item.quantity }}</td>
@@ -76,26 +88,65 @@ export default {
             <!-- 生产计划 -->
             <div v-if="activeTab === 'plans'">
                 <div class="d-flex justify-content-between align-items-center mb-3">
-                    <h5>生产计划列表</h5>
+                    <h5>生产计划总表</h5>
+                    <button class="btn btn-primary" @click="openAddPlanModal()">添加生产计划</button>
                 </div>
+                
+                <!-- 生产计划表格 -->
                 <div class="table-responsive mb-4">
                     <table class="table table-hover">
                         <thead class="table-light">
                             <tr>
+                                <th>计划编号</th>
                                 <th>产品</th>
                                 <th>数量</th>
                                 <th>开始日期</th>
                                 <th>结束日期</th>
+                                <th>工时</th>
+                                <th>设备</th>
+                                <th>设备消耗</th>
                                 <th>状态</th>
                                 <th>操作</th>
                             </tr>
                         </thead>
                         <tbody>
-                            <tr v-for="item in data.productionPlans" :key="item.id">
+                            <tr v-if="data.productionPlans.length === 0">
+                                <td colspan="10" class="text-center py-5">
+                                    <div class="text-muted">
+                                        <i class="fas fa-industry fa-3x mb-3 d-block"></i>
+                                        <h5>暂无生产计划数据</h5>
+                                        <p class="mb-3">点击下方按钮创建第一个生产计划</p>
+                                        <button class="btn btn-primary" @click="openAddPlanModal()">
+                                            <i class="fas fa-plus"></i> 添加生产计划
+                                        </button>
+                                    </div>
+                                </td>
+                            </tr>
+                            <tr v-else v-for="item in data.productionPlans" :key="item.id">
+                                <td>{{ item.planNo || item.id }}</td>
                                 <td>{{ getProductName(item.productId) }}</td>
-                                <td>{{ item.quantity }}</td>
+                                <td>
+                                    <span class="editable-cell" @click="startEditQuantity(item)" v-if="editingPlanId !== item.id">
+                                        {{ item.quantity }}
+                                        <i class="bi bi-pencil text-muted ms-1"></i>
+                                    </span>
+                                    <input v-else type="number" class="form-control form-control-sm d-inline-block" 
+                                           style="width: 80px" 
+                                           v-model.number="editingQuantity" 
+                                           @blur="saveQuantityEdit(item)"
+                                           @keyup.enter="saveQuantityEdit(item)"
+                                           ref="quantityInput">
+                                </td>
                                 <td>{{ item.startDate }}</td>
                                 <td>{{ item.endDate }}</td>
+                                <td>{{ calculateWorkHours(item) }}h</td>
+                                <td>{{ getEquipmentName(item.equipmentId) }}</td>
+                                <td>
+                                    <span :class="getEquipmentUsageClass(item)">
+                                        {{ calculateEquipmentUsage(item) }}%
+                                        <span v-if="calculateEquipmentUsage(item) > 100">⚠️</span>
+                                    </span>
+                                </td>
                                 <td>
                                     <span class="badge" :class="getStatusBadgeClass(item.status)">
                                         {{ item.status }}
@@ -110,10 +161,163 @@ export default {
                         </tbody>
                     </table>
                 </div>
+                
+                <!-- 影响分析面板 -->
+                <div class="card mb-4">
+                    <div class="card-header">
+                        <strong>📊 资源消耗分析</strong>
+                    </div>
+                    <div class="card-body">
+                        <div class="row">
+                            <div class="col-md-3">
+                                <div class="text-center">
+                                    <h6 class="text-muted">总工时消耗</h6>
+                                    <h3>{{ totalWorkHours.toFixed(1) }}h</h3>
+                                    <small class="text-muted">({{ (totalWorkHours / 8).toFixed(2) }}人天)</small>
+                                </div>
+                            </div>
+                            <div class="col-md-3">
+                                <div class="text-center">
+                                    <h6 class="text-muted">设备产能消耗</h6>
+                                    <h3 :class="avgEquipmentUsage > 80 ? 'text-warning' : 'text-success'">
+                                        {{ avgEquipmentUsage.toFixed(1) }}%
+                                    </h3>
+                                    <small class="text-muted">平均利用率</small>
+                                </div>
+                            </div>
+                            <div class="col-md-3">
+                                <h6 class="text-muted">物料消耗</h6>
+                                <ul class="list-unstyled mb-0">
+                                    <li v-for="(consumption, materialId) in materialConsumption" :key="materialId">
+                                        {{ getMaterialName(materialId) }}: {{ consumption }}个
+                                    </li>
+                                </ul>
+                            </div>
+                            <div class="col-md-3">
+                                <h6 class="text-muted">库存检查</h6>
+                                <ul class="list-unstyled mb-0">
+                                    <li v-for="(status, materialId) in materialStockStatus" :key="materialId" 
+                                        :class="status.sufficient ? 'text-success' : 'text-danger'">
+                                        {{ status.sufficient ? '✅' : '⚠️' }} {{ getMaterialName(materialId) }}
+                                        <small>({{ status.current }}/{{ status.needed }})</small>
+                                    </li>
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- 甘特图 -->
                 <div class="card">
                     <div class="card-body">
                         <h5 class="card-title">生产排产甘特图</h5>
                         <div id="ganttChart" class="chart-container"></div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 添加生产计划模态框 -->
+            <div class="modal fade" id="addPlanModal" tabindex="-1" ref="addPlanModal">
+                <div class="modal-dialog modal-lg">
+                    <div class="modal-content">
+                        <div class="modal-header">
+                            <h5 class="modal-title">添加生产计划</h5>
+                            <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                        </div>
+                        <div class="modal-body">
+                            <form @submit.prevent="saveNewPlan">
+                                <div class="row">
+                                    <div class="col-md-6">
+                                        <div class="mb-3">
+                                            <label class="form-label">产品</label>
+                                            <select class="form-select" v-model="addingPlan.productId" required>
+                                                <option value="">请选择产品</option>
+                                                <option v-for="product in data.products" :key="product.id" :value="product.id">
+                                                    {{ product.name }}
+                                                </option>
+                                            </select>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <div class="mb-3">
+                                            <label class="form-label">数量</label>
+                                            <input type="number" class="form-control" v-model.number="addingPlan.quantity" min="1" required>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="row">
+                                    <div class="col-md-6">
+                                        <div class="mb-3">
+                                            <label class="form-label">开始日期</label>
+                                            <input type="date" class="form-control" v-model="addingPlan.startDate" required>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <div class="mb-3">
+                                            <label class="form-label">结束日期</label>
+                                            <input type="date" class="form-control" v-model="addingPlan.endDate" required>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="row">
+                                    <div class="col-md-6">
+                                        <div class="mb-3">
+                                            <label class="form-label">优先级</label>
+                                            <select class="form-select" v-model="addingPlan.priority">
+                                                <option value="普通">普通</option>
+                                                <option value="重要">重要</option>
+                                                <option value="紧急">紧急</option>
+                                            </select>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <div class="mb-3">
+                                            <label class="form-label">分配设备</label>
+                                            <select class="form-select" v-model="addingPlan.equipmentId">
+                                                <option value="">请选择设备</option>
+                                                <option v-for="eq in data.equipment" :key="eq.id" :value="eq.id">
+                                                    {{ eq.name }} ({{ eq.capacityPerDay }}个/天)
+                                                </option>
+                                            </select>
+                                        </div>
+                                    </div>
+                                </div>
+                                
+                                <!-- 预估资源消耗 -->
+                                <div class="card bg-light mt-3" v-if="addingPlan.productId">
+                                    <div class="card-body">
+                                        <h6 class="card-title">📊 预估资源消耗</h6>
+                                        <div class="row">
+                                            <div class="col-md-4">
+                                                <p class="mb-1 text-muted">工时消耗</p>
+                                                <strong>{{ calculateEstimatedHours().toFixed(1) }}工时</strong>
+                                                <small class="text-muted">({{ (calculateEstimatedHours() / 8).toFixed(2) }}人天)</small>
+                                            </div>
+                                            <div class="col-md-4">
+                                                <p class="mb-1 text-muted">设备产能消耗</p>
+                                                <strong :class="calculateEstimatedEquipmentUsage() > 100 ? 'text-danger' : 'text-success'">
+                                                    {{ calculateEstimatedEquipmentUsage() }}%
+                                                </strong>
+                                                <span v-if="calculateEstimatedEquipmentUsage() > 100" class="text-danger">⚠️ 超载</span>
+                                            </div>
+                                            <div class="col-md-4">
+                                                <p class="mb-1 text-muted">物料消耗</p>
+                                                <ul class="list-unstyled mb-0 small">
+                                                    <li v-for="item in getBomItems(addingPlan.productId)" :key="item.materialId">
+                                                        {{ getMaterialName(item.materialId) }}: {{ item.quantity * addingPlan.quantity }}
+                                                    </li>
+                                                </ul>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                                
+                                <div class="text-end mt-3">
+                                    <button type="button" class="btn btn-secondary me-2" data-bs-dismiss="modal">取消</button>
+                                    <button type="submit" class="btn btn-primary">保存</button>
+                                </div>
+                            </form>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -255,6 +459,25 @@ export default {
                     </div>
                 </div>
             </div>
+
+            <!-- 确认删除模态框 -->
+            <div class="modal fade" id="confirmDeleteModal" tabindex="-1" ref="confirmDeleteModal">
+                <div class="modal-dialog modal-dialog-centered">
+                    <div class="modal-content">
+                        <div class="modal-header bg-danger text-white">
+                            <h5 class="modal-title">确认操作</h5>
+                            <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                        </div>
+                        <div class="modal-body">
+                            <p>{{ confirmMessage }}</p>
+                        </div>
+                        <div class="modal-footer">
+                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">取消</button>
+                            <button type="button" class="btn btn-danger" @click="executeConfirm">确定</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
         </div>
     `,
     data() {
@@ -265,8 +488,64 @@ export default {
             editingPlan: {},
             completionPlan: null,
             completionQuantity: 0,
-            bomNotFound: false
+            bomNotFound: false,
+            editingPlanId: null,
+            editingQuantity: 0,
+            addingPlan: {
+                productId: '',
+                quantity: 1,
+                startDate: '',
+                endDate: '',
+                priority: '普通',
+                equipmentId: '',
+                workers: []
+            },
+            confirmMessage: '',
+            pendingConfirmCallback: null
         };
+    },
+    computed: {
+        totalWorkHours() {
+            return this.data.productionPlans.reduce((total, plan) => {
+                return total + this.calculateWorkHours(plan);
+            }, 0);
+        },
+        avgEquipmentUsage() {
+            if (this.data.productionPlans.length === 0) return 0;
+            const total = this.data.productionPlans.reduce((sum, plan) => {
+                return sum + this.calculateEquipmentUsage(plan);
+            }, 0);
+            return total / this.data.productionPlans.length;
+        },
+        materialConsumption() {
+            const consumption = {};
+            this.data.productionPlans.forEach(plan => {
+                const bom = this.data.boms?.find(b => b.productId === plan.productId);
+                if (bom && bom.items) {
+                    bom.items.forEach(item => {
+                        if (!consumption[item.materialId]) {
+                            consumption[item.materialId] = 0;
+                        }
+                        consumption[item.materialId] += item.quantity * plan.quantity;
+                    });
+                }
+            });
+            return consumption;
+        },
+        materialStockStatus() {
+            const status = {};
+            Object.keys(this.materialConsumption).forEach(materialId => {
+                const needed = this.materialConsumption[materialId];
+                const inventory = this.data.inventory?.materials?.find(m => m.materialId === materialId);
+                const current = inventory ? inventory.quantity : 0;
+                status[materialId] = {
+                    needed,
+                    current,
+                    sufficient: current >= needed
+                };
+            });
+            return status;
+        }
     },
     mounted() {
         // 监听数据更新事件
@@ -292,6 +571,204 @@ export default {
         refreshData() {
             this.data = loadData();
         },
+        
+        /**
+         * 显示依赖数据缺失提示
+         * @param {string} message - 提示消息
+         * @param {Array} dependencies - 依赖项列表
+         */
+        showDependencyWarning(message, dependencies) {
+            const depsHtml = dependencies.map(d => 
+                `<a href="#" class="d-block text-decoration-none" onclick="window.goToModule('basicData', '${d.name}')">${d.label} [去添加 →]</a>`
+            ).join('');
+            
+            const toast = document.getElementById('toast');
+            const toastBody = document.getElementById('toastBody');
+            const toastTitle = document.getElementById('toastTitle');
+            const toastIcon = document.getElementById('toastIcon');
+            
+            if (toast && toastBody && toastTitle && toastIcon) {
+                toastIcon.className = 'fas fa-exclamation-triangle text-warning me-2';
+                toastTitle.textContent = '缺少必要数据';
+                toastBody.innerHTML = `${message}<br><small class="mt-2 d-block">${depsHtml}</small>`;
+                
+                const bsToast = new bootstrap.Toast(toast, { delay: 5000 });
+                bsToast.show();
+            } else {
+                alert(`${message}\n\n请先添加：${dependencies.map(d => d.label).join('、')}`);
+            }
+        },
+        
+        /**
+         * 跳转到基础资料模块
+         * @param {string} tab - 标签页名称
+         */
+        goToBasicData(tab) {
+            window.dispatchEvent(new CustomEvent('switch-page', { detail: { page: 1, tab: tab } }));
+        },
+        
+        /**
+         * 计算工时
+         */
+        calculateWorkHours(plan) {
+            const product = this.data.products?.find(p => p.id === plan.productId);
+            const productionTime = product?.productionTime || 0.5;
+            return plan.quantity * productionTime;
+        },
+        
+        /**
+         * 计算设备产能消耗率
+         */
+        calculateEquipmentUsage(plan) {
+            if (!plan.equipmentId) return 0;
+            const equipment = this.data.equipment?.find(e => e.id === plan.equipmentId);
+            if (!equipment) return 0;
+            
+            const days = Math.ceil((new Date(plan.endDate) - new Date(plan.startDate)) / (1000 * 60 * 60 * 24)) + 1;
+            const dailyProduction = plan.quantity / days;
+            return Math.round((dailyProduction / equipment.capacityPerDay) * 100);
+        },
+        
+        /**
+         * 获取设备产能消耗样式类
+         */
+        getEquipmentUsageClass(plan) {
+            const usage = this.calculateEquipmentUsage(plan);
+            if (usage > 100) return 'text-danger fw-bold';
+            if (usage > 80) return 'text-warning';
+            return 'text-success';
+        },
+        
+        /**
+         * 获取设备名称
+         */
+        getEquipmentName(equipmentId) {
+            if (!equipmentId) return '-';
+            const equipment = this.data.equipment?.find(e => e.id === equipmentId);
+            return equipment ? equipment.name : '-';
+        },
+        
+        /**
+         * 获取物料名称
+         */
+        getMaterialName(materialId) {
+            const material = this.data.materials?.find(m => m.id === materialId);
+            return material ? material.name : '未知物料';
+        },
+        
+        /**
+         * 获取产品的BOM清单项
+         * @param {string} productId - 产品ID
+         * @returns {Array} BOM清单项数组
+         */
+        getBomItems(productId) {
+            if (!productId) return [];
+            const bom = this.data.boms?.find(b => b.productId === productId);
+            return bom?.items || [];
+        },
+        
+        /**
+         * 开始编辑数量
+         */
+        startEditQuantity(plan) {
+            this.editingPlanId = plan.id;
+            this.editingQuantity = plan.quantity;
+            this.$nextTick(() => {
+                if (this.$refs.quantityInput && this.$refs.quantityInput[0]) {
+                    this.$refs.quantityInput[0].focus();
+                }
+            });
+        },
+        
+        /**
+         * 保存数量编辑
+         */
+        saveQuantityEdit(plan) {
+            if (this.editingQuantity > 0) {
+                const planIndex = this.data.productionPlans.findIndex(p => p.id === plan.id);
+                if (planIndex !== -1) {
+                    this.data.productionPlans[planIndex].quantity = this.editingQuantity;
+                    saveData(this.data);
+                }
+            }
+            this.editingPlanId = null;
+            this.editingQuantity = 0;
+        },
+        
+        /**
+         * 打开添加生产计划模态框
+         */
+        openAddPlanModal() {
+            if (this.data.products.length === 0) {
+                this.showDependencyWarning('创建生产计划需要先添加产品信息', [
+                    { name: 'products', label: '产品信息' }
+                ]);
+                return;
+            }
+            
+            this.addingPlan = {
+                productId: '',
+                quantity: 1,
+                startDate: new Date().toISOString().split('T')[0],
+                endDate: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
+                priority: '普通',
+                equipmentId: '',
+                workers: []
+            };
+            new bootstrap.Modal(this.$refs.addPlanModal).show();
+        },
+        
+        /**
+         * 保存新生产计划
+         */
+        saveNewPlan() {
+            if (!this.addingPlan.productId || this.addingPlan.quantity <= 0) {
+                alert('请填写完整信息');
+                return;
+            }
+            
+            const plan = {
+                id: generateId(),
+                planNo: `PP-${new Date().toISOString().slice(0,10).replace(/-/g,'')}-${String(this.data.productionPlans.length + 1).padStart(3, '0')}`,
+                productId: this.addingPlan.productId,
+                quantity: this.addingPlan.quantity,
+                startDate: this.addingPlan.startDate,
+                endDate: this.addingPlan.endDate,
+                status: '待处理',
+                priority: this.addingPlan.priority,
+                equipmentId: this.addingPlan.equipmentId,
+                workers: this.addingPlan.workers
+            };
+            
+            this.data.productionPlans.push(plan);
+            saveData(this.data);
+            bootstrap.Modal.getInstance(this.$refs.addPlanModal).hide();
+            this.initGanttChart();
+        },
+        
+        /**
+         * 计算预估工时
+         */
+        calculateEstimatedHours() {
+            if (!this.addingPlan.productId || this.addingPlan.quantity <= 0) return 0;
+            const product = this.data.products?.find(p => p.id === this.addingPlan.productId);
+            const productionTime = product?.productionTime || 0.5;
+            return this.addingPlan.quantity * productionTime;
+        },
+        
+        /**
+         * 计算预估设备消耗
+         */
+        calculateEstimatedEquipmentUsage() {
+            if (!this.addingPlan.equipmentId || this.addingPlan.quantity <= 0) return 0;
+            const equipment = this.data.equipment?.find(e => e.id === this.addingPlan.equipmentId);
+            if (!equipment) return 0;
+            
+            const days = Math.ceil((new Date(this.addingPlan.endDate) - new Date(this.addingPlan.startDate)) / (1000 * 60 * 60 * 24)) + 1;
+            const dailyProduction = this.addingPlan.quantity / days;
+            return Math.round((dailyProduction / equipment.capacityPerDay) * 100);
+        },
+        
         /**
          * 获取产品名称
          * @param {string} id - 产品ID
@@ -348,6 +825,19 @@ export default {
          * @param {Object} order - 订单对象
          */
         openOrderModal(order = null) {
+            if (!order && this.data.customers.length === 0) {
+                this.showDependencyWarning('创建订单需要先添加客户信息', [
+                    { name: 'customers', label: '客户信息' }
+                ]);
+                return;
+            }
+            if (!order && this.data.products.length === 0) {
+                this.showDependencyWarning('创建订单需要先添加产品信息', [
+                    { name: 'products', label: '产品信息' }
+                ]);
+                return;
+            }
+            
             this.editingOrder = order ? { ...order } : { 
                 orderNo: '', 
                 customerId: '',
@@ -447,10 +937,10 @@ export default {
          * @param {string} id - 订单ID
          */
         deleteOrder(id) {
-            if (confirm('确定要删除这个订单吗？')) {
+            this.showConfirm('确定要删除这个订单吗？', () => {
                 this.data.orders = this.data.orders.filter(o => o.id !== id);
                 saveData(this.data);
-            }
+            });
         },
 
         /**
@@ -468,11 +958,21 @@ export default {
             const conflictingPlans = this.getConflictingPlans(startDate, deliveryDate);
             if (conflictingPlans.length > 0) {
                 const confirmMsg = `检测到资源冲突！\n\n与以下生产计划时间重叠：\n${conflictingPlans.map(p => `- ${this.getProductName(p.productId)} (${p.startDate} ~ ${p.endDate})`).join('\n')}\n\n是否仍要创建生产计划？`;
-                if (!confirm(confirmMsg)) {
-                    return;
-                }
+                this.showConfirm(confirmMsg, () => {
+                    this.createProductionPlan(order, startDate);
+                });
+                return;
             }
 
+            this.createProductionPlan(order, startDate);
+        },
+
+        /**
+         * 创建生产计划
+         * @param {Object} order - 订单对象
+         * @param {Date} startDate - 开始日期
+         */
+        createProductionPlan(order, startDate) {
             const plan = {
                 id: generateId(),
                 planNo: `PP-${new Date().toISOString().slice(0,10).replace(/-/g,'')}-${String(this.data.productionPlans.length + 1).padStart(3, '0')}`,
@@ -547,11 +1047,12 @@ export default {
          * 删除生产计划
          * @param {string} id - 生产计划ID
          */
-        deletePlan(id) {
-            if (confirm('确定要删除这个生产计划吗？')) {
+        async deletePlan(id) {
+            if (await window.confirmAction('确定要删除这个生产计划吗？此操作不可撤销。')) {
                 this.data.productionPlans = this.data.productionPlans.filter(p => p.id !== id);
                 saveData(this.data);
                 this.initGanttChart();
+                window.showToast('success', '删除成功', '生产计划已删除');
             }
         },
 

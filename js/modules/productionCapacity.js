@@ -383,10 +383,11 @@ export default {
             saveData(this.data);
             bootstrap.Modal.getInstance(this.$refs.equipmentModal).hide();
         },
-        deleteEquipment(id) {
-            if (confirm('确定要删除这个设备吗？')) {
+        deleteEquipment: async function(id) {
+            if (await window.confirmAction('确定要删除这个设备吗？此操作不可撤销。')) {
                 this.data.equipment = this.data.equipment.filter(e => e.id !== id);
                 saveData(this.data);
+                window.showToast('success', '删除成功', '设备已删除');
             }
         },
 
@@ -405,10 +406,11 @@ export default {
             saveData(this.data);
             bootstrap.Modal.getInstance(this.$refs.workerModal).hide();
         },
-        deleteWorker(id) {
-            if (confirm('确定要删除这个工人吗？')) {
+        deleteWorker: async function(id) {
+            if (await window.confirmAction('确定要删除这个工人吗？此操作不可撤销。')) {
                 this.data.workers = this.data.workers.filter(w => w.id !== id);
                 saveData(this.data);
+                window.showToast('success', '删除成功', '工人已删除');
             }
         },
 
@@ -427,10 +429,11 @@ export default {
             saveData(this.data);
             bootstrap.Modal.getInstance(this.$refs.workhourModal).hide();
         },
-        deleteWorkhour(id) {
-            if (confirm('确定要删除这个工时设置吗？')) {
+        deleteWorkhour: async function(id) {
+            if (await window.confirmAction('确定要删除这个工时设置吗？此操作不可撤销。')) {
                 this.data.workhours = this.data.workhours.filter(w => w.id !== id);
                 saveData(this.data);
+                window.showToast('success', '删除成功', '工时设置已删除');
             }
         },
 

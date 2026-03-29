@@ -45,8 +45,9 @@
                                     <div class="col mr-2">
                                         <div class="text-xs font-weight-bold text-primary text-uppercase mb-1">
                                             总销售额</div>
-                                        <div class="h5 mb-0 font-weight-bold text-gray-800">¥128,500</div>
-                                        <div class="text-xs text-success mt-1"><i class="fas fa-arrow-up"></i> 12.5%</div>
+                                        <div class="h5 mb-0 font-weight-bold text-gray-800">¥{{ formatNumber(totalSales) }}</div>
+                                        <div class="text-xs text-success mt-1" v-if="salesGrowth >= 0"><i class="fas fa-arrow-up"></i> {{ salesGrowth.toFixed(1) }}%</div>
+                                        <div class="text-xs text-danger mt-1" v-else><i class="fas fa-arrow-down"></i> {{ Math.abs(salesGrowth).toFixed(1) }}%</div>
                                     </div>
                                     <div class="col-auto">
                                         <i class="fas fa-dollar-sign fa-2x text-gray-300"></i>
@@ -62,8 +63,10 @@
                                     <div class="col mr-2">
                                         <div class="text-xs font-weight-bold text-success text-uppercase mb-1">
                                             库存水平</div>
-                                        <div class="h5 mb-0 font-weight-bold text-gray-800">85%</div>
-                                        <div class="text-xs text-success mt-1"><i class="fas fa-arrow-up"></i> 3.2%</div>
+                                        <div class="h5 mb-0 font-weight-bold text-gray-800">{{ inventoryLevel }}%</div>
+                                        <div class="text-xs" :class="inventoryChange >= 0 ? 'text-success' : 'text-danger'">
+                                            <i :class="inventoryChange >= 0 ? 'fas fa-arrow-up' : 'fas fa-arrow-down'"></i> {{ Math.abs(inventoryChange).toFixed(1) }}%
+                                        </div>
                                     </div>
                                     <div class="col-auto">
                                         <i class="fas fa-warehouse fa-2x text-gray-300"></i>
@@ -79,8 +82,10 @@
                                     <div class="col mr-2">
                                         <div class="text-xs font-weight-bold text-warning text-uppercase mb-1">
                                             生产效率</div>
-                                        <div class="h5 mb-0 font-weight-bold text-gray-800">92%</div>
-                                        <div class="text-xs text-danger mt-1"><i class="fas fa-arrow-down"></i> 1.8%</div>
+                                        <div class="h5 mb-0 font-weight-bold text-gray-800">{{ productionEfficiency }}%</div>
+                                        <div class="text-xs" :class="efficiencyChange >= 0 ? 'text-success' : 'text-danger'">
+                                            <i :class="efficiencyChange >= 0 ? 'fas fa-arrow-up' : 'fas fa-arrow-down'"></i> {{ Math.abs(efficiencyChange).toFixed(1) }}%
+                                        </div>
                                     </div>
                                     <div class="col-auto">
                                         <i class="fas fa-industry fa-2x text-gray-300"></i>
@@ -96,8 +101,10 @@
                                     <div class="col mr-2">
                                         <div class="text-xs font-weight-bold text-info text-uppercase mb-1">
                                             订单数量</div>
-                                        <div class="h5 mb-0 font-weight-bold text-gray-800">248</div>
-                                        <div class="text-xs text-success mt-1"><i class="fas fa-arrow-up"></i> 8.7%</div>
+                                        <div class="h5 mb-0 font-weight-bold text-gray-800">{{ orderCount }}</div>
+                                        <div class="text-xs" :class="orderGrowth >= 0 ? 'text-success' : 'text-danger'">
+                                            <i :class="orderGrowth >= 0 ? 'fas fa-arrow-up' : 'fas fa-arrow-down'"></i> {{ Math.abs(orderGrowth).toFixed(1) }}%
+                                        </div>
                                     </div>
                                     <div class="col-auto">
                                         <i class="fas fa-shopping-cart fa-2x text-gray-300"></i>
@@ -321,6 +328,68 @@
             <!-- 数据管理 -->
             <div v-show="currentPage === 12">
                 <data-manager-module></data-manager-module>
+            </div>
+
+            <!-- 欢迎引导弹窗 -->
+            <div class="modal fade" id="welcomeModal" tabindex="-1" data-bs-backdrop="static">
+                <div class="modal-dialog modal-dialog-centered">
+                    <div class="modal-content">
+                        <div class="modal-header bg-primary text-white">
+                            <h5 class="modal-title">🎉 欢迎使用供应链管理教学工具</h5>
+                        </div>
+                        <div class="modal-body">
+                            <p>这是一个帮助您学习供应链管理的交互式工具。</p>
+                            <h6>📚 主要功能：</h6>
+                            <ul>
+                                <li><strong>基础资料</strong> - 管理产品、物料、供应商、客户</li>
+                                <li><strong>生产计划</strong> - 创建订单、生成生产计划</li>
+                                <li><strong>采购计划</strong> - 计算采购需求、创建采购订单</li>
+                                <li><strong>库存管理</strong> - 查看库存、调整库存</li>
+                            </ul>
+                            <div class="alert alert-info">
+                                <i class="fas fa-lightbulb"></i> <strong>建议：</strong>点击下方按钮加载示例数据，快速体验完整功能
+                            </div>
+                        </div>
+                        <div class="modal-footer">
+                            <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">开始使用</button>
+                            <button type="button" class="btn btn-primary" id="loadSampleBtn">
+                                <i class="fas fa-database"></i> 加载示例数据
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Toast 提示容器 -->
+            <div class="toast-container position-fixed top-0 end-0 p-3" style="z-index: 9999;">
+                <div id="toast" class="toast" role="alert">
+                    <div class="toast-header">
+                        <i class="fas fa-check-circle text-success me-2" id="toastIcon"></i>
+                        <strong class="me-auto" id="toastTitle">提示</strong>
+                        <button type="button" class="btn-close" data-bs-dismiss="toast"></button>
+                    </div>
+                    <div class="toast-body" id="toastBody"></div>
+                </div>
+            </div>
+
+            <!-- 全局确认弹窗 -->
+            <div class="modal fade" id="confirmModal" tabindex="-1">
+                <div class="modal-dialog modal-dialog-centered modal-sm">
+                    <div class="modal-content">
+                        <div class="modal-header bg-danger text-white">
+                            <h5 class="modal-title"><i class="fas fa-exclamation-triangle me-2"></i>确认操作</h5>
+                        </div>
+                        <div class="modal-body">
+                            <p id="confirmMessage" class="mb-0"></p>
+                        </div>
+                        <div class="modal-footer">
+                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">取消</button>
+                            <button type="button" class="btn btn-danger" id="confirmBtn">
+                                <i class="fas fa-trash"></i> 确定
+                            </button>
+                        </div>
+                    </div>
+                </div>
             </div>
         </div>
     </div>

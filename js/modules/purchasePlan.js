@@ -43,7 +43,19 @@ export default {
                             </tr>
                         </thead>
                         <tbody>
-                            <tr v-for="item in purchaseRequirements" :key="item.materialId">
+                            <tr v-if="purchaseRequirements.length === 0">
+                                <td colspan="6" class="text-center py-5">
+                                    <div class="text-muted">
+                                        <i class="fas fa-calculator fa-3x mb-3 d-block"></i>
+                                        <h5>暂无采购需求数据</h5>
+                                        <p class="mb-3">点击下方按钮计算采购需求</p>
+                                        <button class="btn btn-primary" @click="calculateRequirements()">
+                                            <i class="fas fa-sync"></i> 计算采购需求
+                                        </button>
+                                    </div>
+                                </td>
+                            </tr>
+                            <tr v-else v-for="item in purchaseRequirements" :key="item.materialId">
                                 <td>{{ getMaterial(item.materialId)?.code }}</td>
                                 <td>{{ getMaterial(item.materialId)?.name }}</td>
                                 <td>{{ item.requiredQty }}</td>
@@ -389,10 +401,11 @@ export default {
          * 删除采购订单
          * @param {string} id - 采购订单ID
          */
-        deletePurchaseOrder(id) {
-            if (confirm('确定要删除这个采购订单吗？')) {
+        async deletePurchaseOrder(id) {
+            if (await window.confirmAction('确定要删除这个采购订单吗？此操作不可撤销。')) {
                 this.data.purchaseOrders = this.data.purchaseOrders.filter(o => o.id !== id);
                 saveData(this.data);
+                window.showToast('success', '删除成功', '采购订单已删除');
             }
         },
 

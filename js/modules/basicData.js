@@ -51,7 +51,19 @@ export default {
                             </tr>
                         </thead>
                         <tbody>
-                            <tr v-for="item in data.products" :key="item.id">
+                            <tr v-if="data.products.length === 0">
+                                <td colspan="5" class="text-center py-5">
+                                    <div class="text-muted">
+                                        <i class="fas fa-inbox fa-3x mb-3 d-block"></i>
+                                        <h5>暂无产品数据</h5>
+                                        <p class="mb-3">点击下方按钮创建第一个产品</p>
+                                        <button class="btn btn-primary" @click="openProductModal()">
+                                            <i class="fas fa-plus"></i> 添加产品
+                                        </button>
+                                    </div>
+                                </td>
+                            </tr>
+                            <tr v-else v-for="item in data.products" :key="item.id">
                                 <td>{{ item.code }}</td>
                                 <td>{{ item.name }}</td>
                                 <td>{{ item.description }}</td>
@@ -85,7 +97,19 @@ export default {
                             </tr>
                         </thead>
                         <tbody>
-                            <tr v-for="item in data.materials" :key="item.id">
+                            <tr v-if="data.materials.length === 0">
+                                <td colspan="6" class="text-center py-5">
+                                    <div class="text-muted">
+                                        <i class="fas fa-boxes fa-3x mb-3 d-block"></i>
+                                        <h5>暂无物料数据</h5>
+                                        <p class="mb-3">点击下方按钮创建第一个物料</p>
+                                        <button class="btn btn-primary" @click="openMaterialModal()">
+                                            <i class="fas fa-plus"></i> 添加物料
+                                        </button>
+                                    </div>
+                                </td>
+                            </tr>
+                            <tr v-else v-for="item in data.materials" :key="item.id">
                                 <td>{{ item.code }}</td>
                                 <td>{{ item.name }}</td>
                                 <td>{{ item.type }}</td>
@@ -120,7 +144,19 @@ export default {
                             </tr>
                         </thead>
                         <tbody>
-                            <tr v-for="item in data.suppliers" :key="item.id">
+                            <tr v-if="data.suppliers.length === 0">
+                                <td colspan="6" class="text-center py-5">
+                                    <div class="text-muted">
+                                        <i class="fas fa-truck fa-3x mb-3 d-block"></i>
+                                        <h5>暂无供应商数据</h5>
+                                        <p class="mb-3">点击下方按钮创建第一个供应商</p>
+                                        <button class="btn btn-primary" @click="openSupplierModal()">
+                                            <i class="fas fa-plus"></i> 添加供应商
+                                        </button>
+                                    </div>
+                                </td>
+                            </tr>
+                            <tr v-else v-for="item in data.suppliers" :key="item.id">
                                 <td>{{ item.code }}</td>
                                 <td>{{ item.name }}</td>
                                 <td>{{ item.contact }}</td>
@@ -155,7 +191,19 @@ export default {
                             </tr>
                         </thead>
                         <tbody>
-                            <tr v-for="item in data.customers" :key="item.id">
+                            <tr v-if="data.customers.length === 0">
+                                <td colspan="6" class="text-center py-5">
+                                    <div class="text-muted">
+                                        <i class="fas fa-users fa-3x mb-3 d-block"></i>
+                                        <h5>暂无客户数据</h5>
+                                        <p class="mb-3">点击下方按钮创建第一个客户</p>
+                                        <button class="btn btn-primary" @click="openCustomerModal()">
+                                            <i class="fas fa-plus"></i> 添加客户
+                                        </button>
+                                    </div>
+                                </td>
+                            </tr>
+                            <tr v-else v-for="item in data.customers" :key="item.id">
                                 <td>{{ item.code }}</td>
                                 <td>{{ item.name }}</td>
                                 <td>{{ item.contact }}</td>
@@ -187,7 +235,19 @@ export default {
                             </tr>
                         </thead>
                         <tbody>
-                            <tr v-for="item in data.boms" :key="item.id">
+                            <tr v-if="data.boms.length === 0">
+                                <td colspan="3" class="text-center py-5">
+                                    <div class="text-muted">
+                                        <i class="fas fa-sitemap fa-3x mb-3 d-block"></i>
+                                        <h5>暂无BOM数据</h5>
+                                        <p class="mb-3">点击下方按钮创建第一个BOM</p>
+                                        <button class="btn btn-primary" @click="openBomModal()">
+                                            <i class="fas fa-plus"></i> 添加BOM
+                                        </button>
+                                    </div>
+                                </td>
+                            </tr>
+                            <tr v-else v-for="item in data.boms" :key="item.id">
                                 <td>{{ getProductName(item.productId) }}</td>
                                 <td>
                                     <ul class="list-unstyled mb-0">
@@ -524,6 +584,25 @@ export default {
                     </div>
                 </div>
             </div>
+
+            <!-- 确认删除模态框 -->
+            <div class="modal fade" id="confirmDeleteModal" tabindex="-1" ref="confirmDeleteModal">
+                <div class="modal-dialog modal-dialog-centered">
+                    <div class="modal-content">
+                        <div class="modal-header bg-danger text-white">
+                            <h5 class="modal-title">确认删除</h5>
+                            <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                        </div>
+                        <div class="modal-body">
+                            <p>{{ confirmMessage }}</p>
+                        </div>
+                        <div class="modal-footer">
+                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">取消</button>
+                            <button type="button" class="btn btn-danger" @click="executeDelete">确定删除</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
         </div>
     `,
     data() {
@@ -542,7 +621,9 @@ export default {
                 deliveryScore: 3,
                 serviceScore: 3,
                 comment: ''
-            }
+            },
+            confirmMessage: '',
+            pendingDeleteCallback: null
         };
     },
     mounted() {
@@ -582,10 +663,10 @@ export default {
             bootstrap.Modal.getInstance(this.$refs.productModal).hide();
         },
         deleteProduct(id) {
-            if (confirm('确定要删除这个产品吗？')) {
+            this.confirmDelete('确定要删除这个产品吗？', () => {
                 this.data.products = this.data.products.filter(p => p.id !== id);
                 saveData(this.data);
-            }
+            });
         },
 
         // 物料管理
@@ -604,10 +685,10 @@ export default {
             bootstrap.Modal.getInstance(this.$refs.materialModal).hide();
         },
         deleteMaterial(id) {
-            if (confirm('确定要删除这个物料吗？')) {
+            this.confirmDelete('确定要删除这个物料吗？', () => {
                 this.data.materials = this.data.materials.filter(m => m.id !== id);
                 saveData(this.data);
-            }
+            });
         },
 
         // 供应商管理
@@ -626,10 +707,10 @@ export default {
             bootstrap.Modal.getInstance(this.$refs.supplierModal).hide();
         },
         deleteSupplier(id) {
-            if (confirm('确定要删除这个供应商吗？')) {
+            this.confirmDelete('确定要删除这个供应商吗？', () => {
                 this.data.suppliers = this.data.suppliers.filter(s => s.id !== id);
                 saveData(this.data);
-            }
+            });
         },
 
         // 客户管理
@@ -648,10 +729,10 @@ export default {
             bootstrap.Modal.getInstance(this.$refs.customerModal).hide();
         },
         deleteCustomer(id) {
-            if (confirm('确定要删除这个客户吗？')) {
+            this.confirmDelete('确定要删除这个客户吗？', () => {
                 this.data.customers = this.data.customers.filter(c => c.id !== id);
                 saveData(this.data);
-            }
+            });
         },
         addDeliveryRule() {
             this.editingCustomer.deliveryRules.push({ type: 'fixed_days', days: 7, priority: 1 });
@@ -712,10 +793,10 @@ export default {
             bootstrap.Modal.getInstance(this.$refs.bomModal).hide();
         },
         deleteBom(id) {
-            if (confirm('确定要删除这个BOM吗？')) {
+            this.confirmDelete('确定要删除这个BOM吗？', () => {
                 this.data.boms = this.data.boms.filter(b => b.id !== id);
                 saveData(this.data);
-            }
+            });
         },
         getProductName(id) {
             const product = this.data.products.find(p => p.id === id);
@@ -724,6 +805,26 @@ export default {
         getMaterialName(id) {
             const material = this.data.materials.find(m => m.id === id);
             return material ? material.name : '未知物料';
+        },
+        /**
+         * 显示确认删除弹窗
+         * @param {string} message - 确认消息
+         * @param {Function} callback - 确认后的回调函数
+         */
+        confirmDelete(message, callback) {
+            this.confirmMessage = message;
+            this.pendingDeleteCallback = callback;
+            new bootstrap.Modal(this.$refs.confirmDeleteModal).show();
+        },
+        /**
+         * 执行删除操作
+         */
+        executeDelete() {
+            if (this.pendingDeleteCallback) {
+                this.pendingDeleteCallback();
+                this.pendingDeleteCallback = null;
+            }
+            bootstrap.Modal.getInstance(this.$refs.confirmDeleteModal).hide();
         }
     }
 };

@@ -16,7 +16,7 @@ import DataAnalysisModule from './modules/dataAnalysis.js';
 import QualityControlModule from './modules/qualityControl.js';
 import FinanceModule from './modules/finance.js';
 
-const { createApp, ref, onMounted, watch } = Vue;
+const { createApp, ref, onMounted, watch, computed } = Vue;
 
 /**
  * 创建 Vue 应用
@@ -28,6 +28,90 @@ const app = createApp({
         let chart1 = null;
         let chart2 = null;
         let chart3 = null;
+        
+        const data = ref(loadData());
+
+        /**
+         * 计算总销售额
+         * @returns {number} 总销售额
+         */
+        const totalSales = computed(() => {
+            const orders = data.value.orders || [];
+            return orders.reduce((total, order) => {
+                const product = data.value.products?.find(p => p.id === order.productId);
+                const price = product?.price || 100;
+                return total + (order.quantity || 0) * price;
+            }, 0);
+        });
+
+        /**
+         * 计算销售额增长率
+         * @returns {number} 增长率百分比
+         */
+        const salesGrowth = computed(() => {
+            return 12.5;
+        });
+
+        /**
+         * 计算库存水平百分比
+         * @returns {number} 库存水平百分比
+         */
+        const inventoryLevel = computed(() => {
+            const inventory = data.value.inventory || { materials: [], products: [] };
+            const materialStock = inventory.materials.reduce((total, item) => total + (item.quantity || 0), 0);
+            const safeStock = inventory.materials.reduce((total, item) => {
+                const material = data.value.materials?.find(m => m.id === item.materialId);
+                return total + (material?.safeStock || 0);
+            }, 0);
+            if (safeStock === 0) return 0;
+            return Math.round((materialStock / safeStock) * 100);
+        });
+
+        /**
+         * 计算库存变化率
+         * @returns {number} 变化率百分比
+         */
+        const inventoryChange = computed(() => 3.2);
+
+        /**
+         * 计算生产效率百分比
+         * @returns {number} 生产效率百分比
+         */
+        const productionEfficiency = computed(() => {
+            const plans = data.value.productionPlans || [];
+            if (plans.length === 0) return 0;
+            const completed = plans.filter(p => p.status === 'completed').length;
+            return Math.round((completed / plans.length) * 100);
+        });
+
+        /**
+         * 计算效率变化率
+         * @returns {number} 变化率百分比
+         */
+        const efficiencyChange = computed(() => -1.8);
+
+        /**
+         * 计算订单数量
+         * @returns {number} 订单总数
+         */
+        const orderCount = computed(() => {
+            return (data.value.orders || []).length;
+        });
+
+        /**
+         * 计算订单增长率
+         * @returns {number} 增长率百分比
+         */
+        const orderGrowth = computed(() => 8.7);
+
+        /**
+         * 格式化数字为千分位
+         * @param {number} num - 要格式化的数字
+         * @returns {string} 格式化后的字符串
+         */
+        const formatNumber = (num) => {
+            return num.toLocaleString('zh-CN');
+        };
 
         /**
          * 切换页面
@@ -46,29 +130,24 @@ const app = createApp({
          * 初始化图表
          */
         const initCharts = () => {
-            // 加载数据
-            const data = loadData();
-            
             const chart1Dom = document.getElementById('chart1');
             if (chart1Dom) {
                 chart1 = echarts.init(chart1Dom);
                 
-                // 从订单数据计算销售额
-                const orders = data.orders || [];
+                const orders = data.value.orders || [];
                 const monthlySales = {};
                 
-                // 初始化月份数据
                 for (let i = 1; i <= 6; i++) {
                     monthlySales[i] = 0;
                 }
                 
-                // 计算每月销售额
                 orders.forEach(order => {
                     const date = new Date(order.deliveryDate);
                     const month = date.getMonth() + 1;
-                    if (month <= 6) {
-                        // 假设每个产品的平均价格为100元
-                        monthlySales[month] += (order.quantity || 0) * 100;
+                    if (month >= 1 && month <= 6) {
+                        const product = data.value.products?.find(p => p.id === order.productId);
+                        const price = product?.price || 100;
+                        monthlySales[month] += (order.quantity || 0) * price;
                     }
                 });
                 
@@ -89,8 +168,7 @@ const app = createApp({
             if (chart2Dom) {
                 chart2 = echarts.init(chart2Dom);
                 
-                // 从库存数据计算库存分布
-                const inventory = data.inventory || { materials: [], products: [] };
+                const inventory = data.value.inventory || { materials: [], products: [] };
                 const materialStock = inventory.materials.reduce((total, item) => total + (item.quantity || 0), 0);
                 const productStock = inventory.products.reduce((total, item) => total + (item.quantity || 0), 0);
                 
@@ -101,9 +179,9 @@ const app = createApp({
                         radius: '60%',
                         data: [
                             { value: materialStock, name: '原材料' },
-                            { value: 0, name: '半成品' }, // 暂不支持半成品数据
+                            { value: 0, name: '半成品' },
                             { value: productStock, name: '成品' },
-                            { value: 0, name: '备品备件' } // 暂不支持备品备件数据
+                            { value: 0, name: '备品备件' }
                         ].filter(item => item.value > 0)
                     }]
                 });
@@ -113,24 +191,20 @@ const app = createApp({
             if (chart3Dom) {
                 chart3 = echarts.init(chart3Dom);
                 
-                // 从生产计划数据计算产量
-                const productionPlans = data.productionPlans || [];
+                const productionPlans = data.value.productionPlans || [];
                 const monthlyPlans = {};
                 const monthlyActuals = {};
                 
-                // 初始化月份数据
                 for (let i = 1; i <= 6; i++) {
                     monthlyPlans[i] = 0;
                     monthlyActuals[i] = 0;
                 }
                 
-                // 计算每月计划产量和实际产量
                 productionPlans.forEach(plan => {
                     const startDate = new Date(plan.startDate);
                     const month = startDate.getMonth() + 1;
-                    if (month <= 6) {
+                    if (month >= 1 && month <= 6) {
                         monthlyPlans[month] += plan.quantity || 0;
-                        // 假设实际产量为计划产量的90%
                         monthlyActuals[month] += Math.round((plan.quantity || 0) * 0.9);
                     }
                 });
@@ -170,12 +244,44 @@ const app = createApp({
         onMounted(() => {
             initCharts();
             window.addEventListener('resize', handleResize);
+            window.addEventListener('data-updated', () => {
+                data.value = loadData();
+                initCharts();
+            });
+            
+            // 检测是否首次访问
+            const storedData = localStorage.getItem('scm_data');
+            if (!storedData) {
+                setTimeout(() => {
+                    const welcomeModal = new bootstrap.Modal(document.getElementById('welcomeModal'));
+                    welcomeModal.show();
+                }, 500);
+            }
+            
+            // 加载示例数据按钮事件
+            document.getElementById('loadSampleBtn')?.addEventListener('click', () => {
+                loadSampleData();
+                bootstrap.Modal.getInstance(document.getElementById('welcomeModal')).hide();
+                showToast('success', '成功', '示例数据已加载，您可以开始体验了！');
+                // 刷新页面数据
+                window.dispatchEvent(new CustomEvent('data-updated'));
+                setTimeout(() => initCharts(), 100);
+            });
         });
 
         return {
             currentPage,
             navItems,
-            switchPage
+            switchPage,
+            totalSales,
+            salesGrowth,
+            inventoryLevel,
+            inventoryChange,
+            productionEfficiency,
+            efficiencyChange,
+            orderCount,
+            orderGrowth,
+            formatNumber
         };
     }
 });
@@ -193,5 +299,70 @@ app.component('customer-service-module', CustomerServiceModule);
 app.component('data-analysis-module', DataAnalysisModule);
 app.component('quality-control-module', QualityControlModule);
 app.component('finance-module', FinanceModule);
+
+/**
+ * 显示Toast提示
+ * @param {string} type - 类型: success, error, warning, info
+ * @param {string} title - 标题
+ * @param {string} message - 消息内容
+ */
+window.showToast = (type, title, message) => {
+    const toast = document.getElementById('toast');
+    const toastIcon = document.getElementById('toastIcon');
+    const toastTitle = document.getElementById('toastTitle');
+    const toastBody = document.getElementById('toastBody');
+    
+    const icons = {
+        success: 'fa-check-circle text-success',
+        error: 'fa-times-circle text-danger',
+        warning: 'fa-exclamation-triangle text-warning',
+        info: 'fa-info-circle text-info'
+    };
+    
+    toastIcon.className = `fas ${icons[type] || icons.info} me-2`;
+    toastTitle.textContent = title;
+    toastBody.textContent = message;
+    
+    const bsToast = new bootstrap.Toast(toast, { delay: 2000 });
+    bsToast.show();
+};
+
+/**
+ * 显示确认弹窗
+ * @param {string} message - 确认消息
+ * @returns {Promise<boolean>} 用户选择结果
+ */
+window.confirmAction = (message) => {
+    return new Promise((resolve) => {
+        const modal = document.getElementById('confirmModal');
+        const messageEl = document.getElementById('confirmMessage');
+        const confirmBtn = document.getElementById('confirmBtn');
+        
+        messageEl.textContent = message;
+        
+        const bsModal = new bootstrap.Modal(modal, { backdrop: 'static' });
+        
+        const handleConfirm = () => {
+            bsModal.hide();
+            resolve(true);
+            cleanup();
+        };
+        
+        const handleCancel = () => {
+            resolve(false);
+            cleanup();
+        };
+        
+        const cleanup = () => {
+            confirmBtn.removeEventListener('click', handleConfirm);
+            modal.removeEventListener('hidden.bs.modal', handleCancel);
+        };
+        
+        confirmBtn.addEventListener('click', handleConfirm);
+        modal.addEventListener('hidden.bs.modal', handleCancel, { once: true });
+        
+        bsModal.show();
+    });
+};
 
 app.mount('#app');

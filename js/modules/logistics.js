@@ -405,10 +405,11 @@ export default {
             saveData(this.data);
             bootstrap.Modal.getInstance(this.$refs.transportModal).hide();
         },
-        deleteTransport(id) {
-            if (confirm('确定要删除这个运输方式吗？')) {
+        deleteTransport: async function(id) {
+            if (await window.confirmAction('确定要删除这个运输方式吗？此操作不可撤销。')) {
                 this.data.transportMethods = this.data.transportMethods.filter(t => t.id !== id);
                 saveData(this.data);
+                window.showToast('success', '删除成功', '运输方式已删除');
             }
         },
 
