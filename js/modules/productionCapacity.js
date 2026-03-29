@@ -52,10 +52,10 @@ export default {
                             <tr v-for="item in data.equipment" :key="item.id">
                                 <td>{{ item.code }}</td>
                                 <td>{{ item.name }}</td>
-                                <td>{{ item.type }}</td>
+                                <td>{{ getEquipmentTypeName(item.typeId) }}</td>
                                 <td>{{ item.capacityPerDay }}</td>
                                 <td>
-                                    <span class="badge" :class="item.status === '正常' ? 'bg-success' : 'bg-danger'">
+                                    <span class="badge" :class="item.status === '正常' ? 'bg-success' : 'bg-warning'">
                                         {{ item.status }}
                                     </span>
                                 </td>
@@ -91,10 +91,10 @@ export default {
                             <tr v-for="item in data.workers" :key="item.id">
                                 <td>{{ item.code }}</td>
                                 <td>{{ item.name }}</td>
-                                <td>{{ item.type }}</td>
+                                <td>{{ getWorkerTypeName(item.typeId) }}</td>
                                 <td>{{ item.efficiency }}%</td>
                                 <td>
-                                    <span class="badge" :class="item.status === '在职' ? 'bg-success' : 'bg-danger'">
+                                    <span class="badge" :class="item.status === '在职' ? 'bg-success' : 'bg-secondary'">
                                         {{ item.status }}
                                     </span>
                                 </td>
@@ -346,6 +346,22 @@ export default {
         }
     },
     methods: {
+        /**
+         * 获取设备类型名称
+         */
+        getEquipmentTypeName(typeId) {
+            const type = this.data.equipmentTypes?.find(t => t.id === typeId);
+            return type ? type.name : typeId || '-';
+        },
+        
+        /**
+         * 获取工人类型名称
+         */
+        getWorkerTypeName(typeId) {
+            const type = this.data.workerTypes?.find(t => t.id === typeId);
+            return type ? type.name : typeId || '-';
+        },
+        
         /**
          * 刷新数据
          */
