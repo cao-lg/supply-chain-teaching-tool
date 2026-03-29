@@ -458,41 +458,31 @@ export default {
          * @param {Object} order - 订单对象
          */
         generatePlan(order) {
-            // 计算生产能力
-            const totalCapacity = this.calculateTotalCapacity();
-            
-            // 检查是否有足够的生产能力
-            if (totalCapacity > 0 && order.quantity > totalCapacity) {
-                alert(`生产能力不足！当前总产能为 ${totalCapacity} 单位/天，订单需求为 ${order.quantity} 单位。`);
-                return;
-            }
-            
             const deliveryDate = new Date(order.deliveryDate);
             const startDate = new Date(deliveryDate);
             
-            // 根据生产能力计算生产天数
-            if (totalCapacity > 0) {
-                const productionDays = Math.ceil(order.quantity / totalCapacity);
-                startDate.setDate(startDate.getDate() - productionDays);
-            } else {
-                // 默认7天
-                startDate.setDate(startDate.getDate() - 7);
-            }
+            // 默认提前7天开始生产
+            startDate.setDate(startDate.getDate() - 7);
 
             // 检查资源冲突
-            if (this.checkResourceConflict(startDate, deliveryDate)) {
-                alert('检测到资源冲突！请调整生产计划时间。');
-                return;
+            const conflictingPlans = this.getConflictingPlans(startDate, deliveryDate);
+            if (conflictingPlans.length > 0) {
+                const confirmMsg = `检测到资源冲突！\n\n与以下生产计划时间重叠：\n${conflictingPlans.map(p => `- ${this.getProductName(p.productId)} (${p.startDate} ~ ${p.endDate})`).join('\n')}\n\n是否仍要创建生产计划？`;
+                if (!confirm(confirmMsg)) {
+                    return;
+                }
             }
 
             const plan = {
                 id: generateId(),
+                planNo: `PP-${new Date().toISOString().slice(0,10).replace(/-/g,'')}-${String(this.data.productionPlans.length + 1).padStart(3, '0')}`,
                 orderId: order.id,
                 productId: order.productId,
                 quantity: order.quantity,
                 startDate: startDate.toISOString().split('T')[0],
                 endDate: order.deliveryDate,
-                status: '待处理'
+                status: '待处理',
+                priority: order.priority || '普通'
             };
 
             this.data.productionPlans.push(plan);
@@ -502,12 +492,13 @@ export default {
         },
 
         /**
-         * 检查资源冲突
+         * 获取冲突的生产计划
          * @param {Date} startDate - 开始日期
          * @param {Date} endDate - 结束日期
-         * @returns {boolean} 是否存在冲突
+         * @returns {Array} 冲突的生产计划列表
          */
-        checkResourceConflict(startDate, endDate) {
+        getConflictingPlans(startDate, endDate) {
+            const conflicts = [];
             for (const plan of this.data.productionPlans) {
                 const planStart = new Date(plan.startDate);
                 const planEnd = new Date(plan.endDate);
@@ -516,10 +507,20 @@ export default {
                 if ((startDate >= planStart && startDate <= planEnd) ||
                     (endDate >= planStart && endDate <= planEnd) ||
                     (startDate <= planStart && endDate >= planEnd)) {
-                    return true;
+                    conflicts.push(plan);
                 }
             }
-            return false;
+            return conflicts;
+        },
+
+        /**
+         * 检查资源冲突
+         * @param {Date} startDate - 开始日期
+         * @param {Date} endDate - 结束日期
+         * @returns {boolean} 是否存在冲突
+         */
+        checkResourceConflict(startDate, endDate) {
+            return this.getConflictingPlans(startDate, endDate).length > 0;
         },
 
         /**
@@ -558,7 +559,6 @@ export default {
          * 初始化甘特图
          */
         initGanttChart() {
-            // 先刷新数据
             this.refreshData();
             
             const chartDom = document.getElementById('ganttChart');
@@ -566,49 +566,101 @@ export default {
 
             const chart = echarts.init(chartDom);
             
-            // 计算生产能力
-            const totalCapacity = this.calculateTotalCapacity();
+            if (this.data.productionPlans.length === 0) {
+                chart.setOption({
+                    title: {
+                        text: '暂无生产计划数据',
+                        left: 'center',
+                        top: 'center',
+                        textStyle: {
+                            color: '#999',
+                            fontSize: 14
+                        }
+                    }
+                });
+                return;
+            }
+
+            const products = [...new Set(this.data.productionPlans.map(p => this.getProductName(p.productId)))];
+            const minDate = new Date(Math.min(...this.data.productionPlans.map(p => new Date(p.startDate).getTime())));
+            const maxDate = new Date(Math.max(...this.data.productionPlans.map(p => new Date(p.endDate).getTime())));
             
-            const seriesData = this.data.productionPlans.map(plan => {
+            minDate.setDate(minDate.getDate() - 3);
+            maxDate.setDate(maxDate.getDate() + 3);
+
+            const seriesData = this.data.productionPlans.map((plan, index) => {
                 const product = this.getProductName(plan.productId);
                 const statusColor = plan.status === '已完成' ? '#52c41a' : 
                                     plan.status === '进行中' ? '#faad14' : '#1890ff';
                 
-                // 检查是否超出生产能力
-                const isOverCapacity = plan.quantity > totalCapacity;
-                const color = isOverCapacity ? '#ff4d4f' : statusColor;
-                
                 return {
                     name: product,
-                    value: [plan.startDate, plan.endDate, plan.quantity],
-                    itemStyle: { color: color }
+                    value: [index, plan.startDate, plan.endDate, plan.quantity, plan.planNo || plan.id],
+                    itemStyle: { color: statusColor }
                 };
             });
 
             chart.setOption({
                 tooltip: {
-                    trigger: 'axis',
+                    trigger: 'item',
                     formatter: (params) => {
-                        const data = params[0];
-                        const capacityInfo = totalCapacity > 0 ? `<br/>生产能力: ${totalCapacity} 单位/天` : '';
-                        return `${data.name}<br/>开始: ${data.value[0]}<br/>结束: ${data.value[1]}<br/>数量: ${data.value[2]}${capacityInfo}`;
+                        const plan = this.data.productionPlans[params.value[0]];
+                        return `<strong>${params.name}</strong><br/>
+                                计划编号: ${plan.planNo || plan.id}<br/>
+                                开始: ${params.value[1]}<br/>
+                                结束: ${params.value[2]}<br/>
+                                数量: ${params.value[3]}<br/>
+                                状态: ${plan.status}`;
                     }
+                },
+                grid: {
+                    left: '15%',
+                    right: '10%',
+                    top: '10%',
+                    bottom: '15%'
                 },
                 xAxis: {
                     type: 'time',
-                    name: '日期'
+                    min: minDate.toISOString().split('T')[0],
+                    max: maxDate.toISOString().split('T')[0],
+                    axisLabel: {
+                        formatter: (value) => {
+                            const date = new Date(value);
+                            return `${date.getMonth()+1}/${date.getDate()}`;
+                        }
+                    }
                 },
                 yAxis: {
                     type: 'category',
-                    data: this.data.productionPlans.map(plan => this.getProductName(plan.productId))
+                    data: this.data.productionPlans.map(p => this.getProductName(p.productId)),
+                    inverse: true
                 },
                 series: [{
-                    type: 'bar',
-                    data: seriesData,
-                    label: {
-                        show: true,
-                        formatter: (params) => `数量: ${params.value[2]}`
-                    }
+                    type: 'custom',
+                    renderItem: (params, api) => {
+                        const categoryIndex = api.value(0);
+                        const start = api.coord([api.value(1), categoryIndex]);
+                        const end = api.coord([api.value(2), categoryIndex]);
+                        const height = 20;
+                        
+                        return {
+                            type: 'rect',
+                            shape: {
+                                x: start[0],
+                                y: start[1] - height / 2,
+                                width: Math.max(end[0] - start[0], 1),
+                                height: height
+                            },
+                            style: api.style({
+                                fill: api.visual('color')
+                            })
+                        };
+                    },
+                    encode: {
+                        x: [1, 2],
+                        y: 0
+                    },
+                    data: seriesData
                 }]
             });
         },
