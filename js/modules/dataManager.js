@@ -62,6 +62,22 @@ export default {
                                         <span class="badge bg-primary rounded-pill">{{ data.boms?.length || 0 }}</span>
                                     </li>
                                     <li class="list-group-item d-flex justify-content-between align-items-center">
+                                        设备类型
+                                        <span class="badge bg-secondary rounded-pill">{{ data.equipmentTypes?.length || 0 }}</span>
+                                    </li>
+                                    <li class="list-group-item d-flex justify-content-between align-items-center">
+                                        工人类型
+                                        <span class="badge bg-secondary rounded-pill">{{ data.workerTypes?.length || 0 }}</span>
+                                    </li>
+                                    <li class="list-group-item d-flex justify-content-between align-items-center">
+                                        设备数量
+                                        <span class="badge bg-success rounded-pill">{{ data.equipment?.length || 0 }}</span>
+                                    </li>
+                                    <li class="list-group-item d-flex justify-content-between align-items-center">
+                                        工人数量
+                                        <span class="badge bg-success rounded-pill">{{ data.workers?.length || 0 }}</span>
+                                    </li>
+                                    <li class="list-group-item d-flex justify-content-between align-items-center">
                                         订单数量
                                         <span class="badge bg-primary rounded-pill">{{ data.orders?.length || 0 }}</span>
                                     </li>
